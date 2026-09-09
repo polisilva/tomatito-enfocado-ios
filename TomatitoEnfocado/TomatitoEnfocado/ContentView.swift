@@ -231,6 +231,31 @@ struct Pomodoro: Decodable, Identifiable {
     var lastUsedLabel: String?
 }
 
+/// Datos de la cabecera de "Mi cuenta": email real + estado de conexión con
+/// Omkrom (especificación "13. Móvil" — GET /mi-cuenta).
+struct CuentaInfo: Decodable {
+    var email: String
+    var displayName: String
+    var omkromConnected: Bool
+    var omkromStatusLabel: String
+}
+
+/// Estado real de un pomodoro en marcha, tal como lo ve el servidor
+/// (GET /pomodoros/active). Se usa para "escuchar estado" y corregir
+/// cualquier desvío del contador local — el servidor es la fuente de verdad.
+struct ActivePomodoroStatus: Decodable {
+    @FlexibleInt var timerId: Int
+    @FlexibleInt var pomodoroId: Int
+    var name: String
+    @FlexibleInt var remaining: Int
+    @FlexibleInt var duration: Int
+    var state: String
+    var phase: String
+    var phaseLabel: String
+    @FlexibleInt var cycle: Int
+    @FlexibleInt var cyclesTotal: Int
+}
+
 // MARK: - Sessão (estado de login, guardado no Keychain)
 
 @MainActor
@@ -290,12 +315,21 @@ final class ActiveTimerStore: ObservableObject {
     @Published private(set) var totalSeconds: Int = 0
     @Published private(set) var secondsLeft: Int = 0
     @Published private(set) var isPaused = false
+    @Published private(set) var cycle: Int = 0
+    @Published private(set) var cyclesTotal: Int = 1
     @Published var isFinished = false
     @Published var isBusy = false
     @Published var errorMessage: String?
 
+    // Duraciones del pomodoro en marcha (minutos), guardadas al iniciar para
+    // poder anunciar la fase siguiente sin depender de una llamada extra.
+    private var workMinutes: Int = 25
+    private var shortBreakMinutes: Int = 5
+    private var longBreakMinutes: Int = 15
+
     private var client: APIClient?
     private var ticker: Timer?
+    private var resyncTimer: Timer?
 
     var hasActive: Bool { pomodoroId != nil }
 
@@ -313,6 +347,29 @@ final class ActiveTimerStore: ObservableObject {
         return Double(secondsLeft) / Double(totalSeconds)
     }
 
+    /// Etiqueta "Ciclo actual" (ej. "2/4"), como en el mockup de "Ahora mismo".
+    var cycleLabel: String {
+        "\(min(cycle + 1, cyclesTotal))/\(cyclesTotal)"
+    }
+
+    /// Texto contextual "Siguiente: 5 min descanso corto" — calculado en el
+    /// cliente a partir de la fase actual, sin llamar a la API.
+    var nextPhaseText: String {
+        switch phase {
+        case "work":
+            let isLastCycle = cycle + 1 >= cyclesTotal
+            let minutes = isLastCycle ? longBreakMinutes : shortBreakMinutes
+            let label = isLastCycle ? "descanso largo" : "descanso corto"
+            return "Siguiente: \(minutes) min \(label)"
+        case "short_break":
+            return "Siguiente: \(workMinutes) min trabajo"
+        case "long_break":
+            return "Siguiente: nueva repetición (\(workMinutes) min trabajo)"
+        default:
+            return ""
+        }
+    }
+
     /// Chamado a partir do root quando o login muda — sem client não há
     /// como falar com a API, então qualquer estado antigo é limpo.
     func configure(client: APIClient?) {
@@ -325,6 +382,8 @@ final class ActiveTimerStore: ObservableObject {
     func reset() {
         ticker?.invalidate()
         ticker = nil
+        resyncTimer?.invalidate()
+        resyncTimer = nil
         pomodoroId = nil
         pomodoroName = ""
         timerId = nil
@@ -332,6 +391,8 @@ final class ActiveTimerStore: ObservableObject {
         totalSeconds = 0
         secondsLeft = 0
         isPaused = false
+        cycle = 0
+        cyclesTotal = 1
         isFinished = false
         errorMessage = nil
     }
@@ -351,6 +412,52 @@ final class ActiveTimerStore: ObservableObject {
                 guard !self.isPaused, self.secondsLeft > 0 else { return }
                 self.secondsLeft -= 1
             }
+        }
+        ensureResyncing()
+    }
+
+    /// "El servidor es la fuente de verdad": cada 15s se contrasta el estado
+    /// local con GET /pomodoros/active para corregir cualquier desvío del
+    /// contador (o detectar que el pomodoro fue pausado/cancelado desde la web).
+    private func ensureResyncing() {
+        guard resyncTimer == nil else { return }
+        resyncTimer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { [weak self] _ in
+            guard let self else { return }
+            Task { @MainActor [self] in await self.resyncFromServer() }
+        }
+    }
+
+    /// Contrasta (o adopta) el estado del pomodoro activo con el servidor.
+    /// Se usa tanto en el timer periódico como al abrir "Ahora mismo", para
+    /// detectar un pomodoro iniciado desde la web mientras el móvil no miraba.
+    func resyncFromServer() async {
+        guard let client, !isFinished else { return }
+        do {
+            let active: [ActivePomodoroStatus] = try await client.request("pomodoros/active")
+            guard let match = pomodoroId != nil
+                ? active.first(where: { $0.pomodoroId == pomodoroId })
+                : active.first
+            else {
+                // El servidor ya no tiene nada en marcha: si el móvil creía
+                // que sí, es que fue cancelado/completado desde otro lado.
+                if pomodoroId != nil { reset() }
+                return
+            }
+
+            if pomodoroId != match.pomodoroId {
+                pomodoroId = match.pomodoroId
+                pomodoroName = match.name
+            }
+            timerId = match.timerId
+            phase = match.phase
+            totalSeconds = match.duration
+            secondsLeft = match.remaining
+            isPaused = (match.state == "paused")
+            cycle = match.cycle
+            cyclesTotal = max(1, match.cyclesTotal)
+            if ticker == nil { startTicking() }
+        } catch {
+            // Silencioso: esto es una corrección de fondo, no debe interrumpir la UI.
         }
     }
 
@@ -382,6 +489,11 @@ final class ActiveTimerStore: ObservableObject {
             secondsLeft = result.duration
             isPaused = false
             isFinished = false
+            cycle = 0
+            cyclesTotal = max(1, pomodoro.cycles)
+            workMinutes = pomodoro.work
+            shortBreakMinutes = pomodoro.shortBreak
+            longBreakMinutes = pomodoro.longBreak
             startTicking()
         } catch {
             errorMessage = error.localizedDescription
@@ -425,6 +537,8 @@ final class ActiveTimerStore: ObservableObject {
                 var isFinal: Bool
                 var phase: String?
                 @FlexibleOptionalInt var duration: Int?
+                @FlexibleOptionalInt var cycle: Int?
+                @FlexibleOptionalInt var cyclesTotal: Int?
             }
             let result: AdvancePhaseResult = try await client.request(
                 "pomodoros/\(pomodoroId)/advance-phase", method: "POST"
@@ -434,12 +548,16 @@ final class ActiveTimerStore: ObservableObject {
                     try? await client.requestRaw("complete?timer_id=\(timerId)", method: "POST")
                 }
                 ticker?.invalidate()
+                resyncTimer?.invalidate()
+                resyncTimer = nil
                 isFinished = true
             } else {
                 phase = result.phase ?? phase
                 totalSeconds = result.duration ?? totalSeconds
                 secondsLeft = result.duration ?? 0
                 isPaused = false
+                cycle = result.cycle ?? cycle
+                cyclesTotal = result.cyclesTotal.map { max(1, $0) } ?? cyclesTotal
                 startTicking()
             }
         } catch {
@@ -549,6 +667,8 @@ struct MiCuentaView: View {
     @State private var isLoading = false
     @State private var errorMessage: String?
     @State private var showingCreate = false
+    @State private var cuenta: CuentaInfo?
+    @State private var nextAlarma: UpcomingAlarma?
 
     var body: some View {
         NavigationStack {
@@ -559,10 +679,19 @@ struct MiCuentaView: View {
                             .font(.system(size: 40))
                             .foregroundStyle(.secondary)
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(session.username).font(.headline)
-                            Text(session.baseURL.contains("local") ? "Servidor local" : "Producción")
+                            Text(cuenta?.displayName.isEmpty == false ? cuenta!.displayName : session.username)
+                                .font(.headline)
+                            Text(cuenta?.email ?? session.username)
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
+                            HStack(spacing: 4) {
+                                Circle()
+                                    .fill(cuenta?.omkromConnected == true ? Color.green : Color.gray)
+                                    .frame(width: 8, height: 8)
+                                Text(cuenta?.omkromConnected == true ? "Conectado a Omkrom" : (cuenta?.omkromStatusLabel ?? "Comprobando..."))
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
                         }
                         Spacer()
                         Button("Salir") { session.logout() }
@@ -626,9 +755,26 @@ struct MiCuentaView: View {
                 }
 
                 Section("Alarmas") {
-                    Text("Vista rápida próximamente — gestiona tus alarmas en la pestaña Alarmas.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+                    if let nextAlarma {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(nextAlarma.name).font(.subheadline)
+                                Text("Próxima: \(nextAlarma.time)")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Toggle("", isOn: Binding(
+                                get: { true },
+                                set: { _ in Task { await toggleNextAlarma() } }
+                            ))
+                            .labelsHidden()
+                        }
+                    } else {
+                        Text("No tienes alarmas activas. Gestiónalas en la pestaña Alarmas.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
             .navigationTitle("Mi cuenta")
@@ -650,6 +796,16 @@ struct MiCuentaView: View {
         } catch {
             errorMessage = error.localizedDescription
         }
+        cuenta = try? await session.client.request("mi-cuenta")
+        let alarmas: [UpcomingAlarma]? = try? await session.client.request("alarmas/upcoming")
+        nextAlarma = alarmas?.first
+    }
+
+    private func toggleNextAlarma() async {
+        guard let nextAlarma else { return }
+        try? await session.client.requestRaw("alarmas/\(nextAlarma.id)/toggle", method: "POST")
+        let alarmas: [UpcomingAlarma]? = try? await session.client.request("alarmas/upcoming")
+        self.nextAlarma = alarmas?.first
     }
 
     private func delete(at offsets: IndexSet) {
@@ -676,7 +832,7 @@ struct CreatePomodoroView: View {
     @State private var shortBreak: Int = 5
     @State private var longBreak: Int = 15
     @State private var cycles: Int = 4
-    @State private var repetitions: Int = 1
+    @State private var repetitionsText: String = ""
     @State private var showingAdvanced = false
     @State private var autoStart = false
     @State private var pauseOnEnd = true
@@ -701,13 +857,23 @@ struct CreatePomodoroView: View {
                 }
 
                 DisclosureGroup("Opciones avanzadas", isExpanded: $showingAdvanced) {
-                    Stepper("Repetir secuencia: \(repetitions)", value: $repetitions, in: 1...20)
+                    HStack {
+                        Text("Repetir secuencia")
+                        Spacer()
+                        TextField("∞", text: $repetitionsText)
+                            .keyboardType(.numberPad)
+                            .multilineTextAlignment(.trailing)
+                            .frame(width: 60)
+                    }
+                    Text("Vacío = en bucle")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                     Toggle("Auto-iniciar siguiente fase", isOn: $autoStart)
                     Toggle("Pausar al finalizar sesión", isOn: $pauseOnEnd)
                 }
 
                 Section {
-                    Text("Ejemplo: \(work) min trabajo → \(shortBreak) min descanso corto → cada \(cycles) ciclos, \(longBreak) min descanso largo")
+                    Text("Ejemplo: \(work) min trabajo → \(shortBreak) min descanso corto → cada \(cycles) ciclos, \(longBreak) min descanso largo\(repetitionsText.trimmingCharacters(in: .whitespaces).isEmpty ? " (en bucle)" : "")")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
@@ -744,19 +910,24 @@ struct CreatePomodoroView: View {
         isSaving = true
         defer { isSaving = false }
         do {
+            var body: [String: Any] = [
+                "name": name,
+                "work": work,
+                "short_break": shortBreak,
+                "long_break": longBreak,
+                "cycles": cycles,
+                "auto_start": autoStart ? 1 : 0,
+                "pause_on_end": pauseOnEnd ? 1 : 0,
+            ]
+            // Vacío = en bucle: se omite "repetitions" para que el servidor
+            // lo guarde como null, en vez de forzar un número de vueltas.
+            if let repetitions = Int(repetitionsText.trimmingCharacters(in: .whitespaces)), repetitions > 0 {
+                body["repetitions"] = repetitions
+            }
             let _: Pomodoro = try await session.client.request(
                 "pomodoros",
                 method: "POST",
-                body: [
-                    "name": name,
-                    "work": work,
-                    "short_break": shortBreak,
-                    "long_break": longBreak,
-                    "cycles": cycles,
-                    "repetitions": repetitions,
-                    "auto_start": autoStart ? 1 : 0,
-                    "pause_on_end": pauseOnEnd ? 1 : 0,
-                ]
+                body: body
             )
             onCreated()
             dismiss()
@@ -829,9 +1000,18 @@ struct AhoraMismoView: View {
                                     Text(timeString(activeTimer.secondsLeft))
                                         .font(.system(size: 44, weight: .bold, design: .rounded))
                                         .monospacedDigit()
+                                    Text("Ciclo \(activeTimer.cycleLabel)")
+                                        .font(.caption)
+                                        .foregroundStyle(.tertiary)
                                 }
                             }
                             .padding(.top, 12)
+
+                            if !activeTimer.nextPhaseText.isEmpty {
+                                Text(activeTimer.nextPhaseText)
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                            }
 
                             if activeTimer.secondsLeft <= 0 {
                                 Button("Avanzar fase") {
@@ -882,10 +1062,14 @@ struct AhoraMismoView: View {
                                 HStack {
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(item.name).font(.subheadline.weight(.medium))
-                                        Text(timeString(item.secondsLeft))
-                                            .font(.footnote)
-                                            .foregroundStyle(.secondary)
-                                            .monospacedDigit()
+                                        HStack(spacing: 6) {
+                                            Text(timeString(item.secondsLeft))
+                                                .monospacedDigit()
+                                            Text(item.isPaused ? "· Pausado" : "· En marcha")
+                                                .foregroundStyle(item.isPaused ? .orange : .green)
+                                        }
+                                        .font(.footnote)
+                                        .foregroundStyle(.secondary)
                                     }
                                     Spacer()
                                     Button {
@@ -923,6 +1107,9 @@ struct AhoraMismoView: View {
                                         .font(.subheadline)
                                         .foregroundStyle(.secondary)
                                         .monospacedDigit()
+                                    Text("Activada")
+                                        .font(.caption2)
+                                        .foregroundStyle(.green)
                                 }
                             }
                         }
@@ -934,7 +1121,12 @@ struct AhoraMismoView: View {
             }
             .navigationTitle("Ahora mismo")
             .task { await loadUpcomingAlarmas() }
-            .refreshable { await loadUpcomingAlarmas() }
+            .task { await resyncLoop() }
+            .refreshable {
+                await loadUpcomingAlarmas()
+                await activeTimer.resyncFromServer()
+                await activeTemporizadores.resyncFromServer()
+            }
         }
     }
 
@@ -943,6 +1135,17 @@ struct AhoraMismoView: View {
             upcomingAlarmas = try await session.client.request("alarmas/upcoming")
         } catch {
             // Silencioso: esta sección es solo un preview, no bloquea la pantalla.
+        }
+    }
+
+    /// "El móvil escucha estado, el servidor es la fuente de verdad": mientras
+    /// esta pantalla está visible, se contrasta el estado local con el
+    /// servidor cada 15s (y también al abrir la pantalla).
+    private func resyncLoop() async {
+        while !Task.isCancelled {
+            await activeTimer.resyncFromServer()
+            await activeTemporizadores.resyncFromServer()
+            try? await Task.sleep(nanoseconds: 15_000_000_000)
         }
     }
 
@@ -1348,6 +1551,47 @@ final class ActiveTemporizadoresStore: ObservableObject {
             items.removeAll { $0.timerId == item.timerId }
         } catch {
             errorMessage = error.localizedDescription
+        }
+    }
+
+    /// "El servidor es la fuente de verdad": reemplaza la lista local por lo
+    /// que devuelve GET /temporizadores/dashboard, para corregir desvíos del
+    /// contador y detectar temporizadores lanzados desde la web.
+    func resyncFromServer() async {
+        guard let client else { return }
+        struct DashboardEntry: Decodable {
+            @FlexibleOptionalInt var timerId: Int?
+            var name: String
+            @FlexibleInt var remaining: Int
+            var state: String
+        }
+        struct DashboardResponse: Decodable {
+            var mode: String
+            var data: [DashboardEntry]
+        }
+        do {
+            let json = try await client.requestRaw("temporizadores/dashboard", method: "GET")
+            let data = try JSONSerialization.data(withJSONObject: json)
+            let decoder = JSONDecoder()
+            decoder.keyDecodingStrategy = .convertFromSnakeCase
+            let response = try decoder.decode(DashboardResponse.self, from: data)
+
+            guard response.mode == "running" else {
+                items = []
+                return
+            }
+            items = response.data.compactMap { entry in
+                guard let timerId = entry.timerId else { return nil }
+                return ActiveTemporizadorItem(
+                    timerId: timerId,
+                    name: entry.name,
+                    secondsLeft: entry.remaining,
+                    isPaused: entry.state == "paused"
+                )
+            }
+            ensureTicking()
+        } catch {
+            // Silencioso: corrección de fondo, no debe interrumpir la UI.
         }
     }
 }
