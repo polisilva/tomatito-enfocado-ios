@@ -2,8 +2,9 @@
 //  ContentView.swift
 //  TomatitoEnfocado
 //
-//  Primeira versão: login com Application Password do WordPress +
-//  lista de pomodoros vindos da API real (tomatito/v1).
+//  Login con Application Password do WordPress + navegação por abas
+//  (Mi cuenta / Ahora mismo / Alarmas / Temporizadores), seguindo a
+//  especificação "13. Móvil" do Omkrom.
 //
 //  NOTA DE ORGANIZAÇÃO: por enquanto todo o código está neste único
 //  arquivo (Keychain, API client, modelos, telas) para evitar ter que
@@ -105,10 +106,14 @@ struct APIClient {
         return "Basic \(data.base64EncodedString())"
     }
 
-    /// Faz uma chamada a /wp-json/tomatito/v1/{path} e devolve o campo "data" já decodificado.
-    func request<T: Decodable>(_ path: String, method: String = "GET", body: [String: Any]? = nil) async throws -> T {
+    private func buildRequest(_ path: String, method: String, body: [String: Any]?) throws -> URLRequest {
         guard var components = URLComponents(string: baseURL) else { throw APIError.invalidURL }
-        components.path = "/wp-json/tomatito/v1/" + path
+        // Alguns endpoints (ex.: "complete?timer_id=42") levam query string no path.
+        let parts = path.split(separator: "?", maxSplits: 1)
+        components.path = "/wp-json/tomatito/v1/" + parts[0]
+        if parts.count > 1 {
+            components.query = String(parts[1])
+        }
         guard let url = components.url else { throw APIError.invalidURL }
 
         var req = URLRequest(url: url)
@@ -120,13 +125,21 @@ struct APIClient {
             req.setValue("application/json", forHTTPHeaderField: "Content-Type")
             req.httpBody = try JSONSerialization.data(withJSONObject: body)
         }
+        return req
+    }
 
+    private func send(_ req: URLRequest) async throws -> Data {
         let (data, response) = try await URLSession.shared.data(for: req)
-
         guard let http = response as? HTTPURLResponse else { throw APIError.httpStatus(-1) }
         // A API do Tomatito devolve 200 mesmo em erros de negócio (success:false),
         // e usa Basic Auth para autenticar — um 401 aqui normalmente é usuário/senha errados.
         guard (200..<300).contains(http.statusCode) else { throw APIError.httpStatus(http.statusCode) }
+        return data
+    }
+
+    /// Faz uma chamada a /wp-json/tomatito/v1/{path} e devolve o campo "data" já decodificado.
+    func request<T: Decodable>(_ path: String, method: String = "GET", body: [String: Any]? = nil) async throws -> T {
+        let data = try await send(try buildRequest(path, method: method, body: body))
 
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
@@ -139,6 +152,20 @@ struct APIClient {
             throw APIError.decoding
         }
         return payload
+    }
+
+    /// Para endpoints cuja resposta vem "solta" junto a "success" (sem "data"):
+    /// pause/resume/stop/complete/delete. Devolve o JSON cru.
+    @discardableResult
+    func requestRaw(_ path: String, method: String = "POST", body: [String: Any]? = nil) async throws -> [String: Any] {
+        let data = try await send(try buildRequest(path, method: method, body: body))
+        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            throw APIError.decoding
+        }
+        guard (json["success"] as? Bool) == true else {
+            throw APIError.server((json["message"] as? String) ?? "No autorizado")
+        }
+        return json
     }
 }
 
@@ -247,6 +274,180 @@ final class SessionStore: ObservableObject {
     }
 }
 
+// MARK: - Estado global: pomodoro ativo ("Ahora mismo")
+//
+// Regla de la especificación "13. Móvil": solo puede haber UN pomodoro
+// activo a la vez, y "Ahora mismo" es la única pantalla que lo controla.
+// Por eso este estado vive a nivel de app (no dentro de una sola pantalla)
+// y se comparte vía @EnvironmentObject.
+
+@MainActor
+final class ActiveTimerStore: ObservableObject {
+    @Published private(set) var pomodoroId: Int?
+    @Published private(set) var pomodoroName: String = ""
+    @Published private(set) var timerId: Int?
+    @Published private(set) var phase: String = "work"
+    @Published private(set) var totalSeconds: Int = 0
+    @Published private(set) var secondsLeft: Int = 0
+    @Published private(set) var isPaused = false
+    @Published var isFinished = false
+    @Published var isBusy = false
+    @Published var errorMessage: String?
+
+    private var client: APIClient?
+    private var ticker: Timer?
+
+    var hasActive: Bool { pomodoroId != nil }
+
+    var phaseLabel: String {
+        switch phase {
+        case "work": return "Trabajo"
+        case "short_break": return "Descanso corto"
+        case "long_break": return "Descanso largo"
+        default: return phase
+        }
+    }
+
+    var progress: Double {
+        guard totalSeconds > 0 else { return 0 }
+        return Double(secondsLeft) / Double(totalSeconds)
+    }
+
+    /// Chamado a partir do root quando o login muda — sem client não há
+    /// como falar com a API, então qualquer estado antigo é limpo.
+    func configure(client: APIClient?) {
+        self.client = client
+        if client == nil {
+            reset()
+        }
+    }
+
+    func reset() {
+        ticker?.invalidate()
+        ticker = nil
+        pomodoroId = nil
+        pomodoroName = ""
+        timerId = nil
+        phase = "work"
+        totalSeconds = 0
+        secondsLeft = 0
+        isPaused = false
+        isFinished = false
+        errorMessage = nil
+    }
+
+    private func intFromAny(_ value: Any?) -> Int {
+        if let n = value as? Int { return n }
+        if let n = value as? NSNumber { return n.intValue }
+        if let s = value as? String { return Int(s) ?? 0 }
+        return 0
+    }
+
+    private func startTicking() {
+        ticker?.invalidate()
+        ticker = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
+            guard let self else { return }
+            Task { @MainActor [self] in
+                guard !self.isPaused, self.secondsLeft > 0 else { return }
+                self.secondsLeft -= 1
+            }
+        }
+    }
+
+    /// Regla: iniciar un pomodoro nuevo cancela el que estuviera activo.
+    func start(pomodoro: Pomodoro) async {
+        guard let client else { return }
+        errorMessage = nil
+        isBusy = true
+        defer { isBusy = false }
+
+        if let currentId = pomodoroId, currentId != pomodoro.id {
+            try? await client.requestRaw("pomodoros/\(currentId)/stop", method: "POST")
+        }
+
+        do {
+            struct StartResult: Decodable {
+                @FlexibleInt var timerId: Int
+                var phase: String
+                @FlexibleInt var duration: Int
+            }
+            let result: StartResult = try await client.request(
+                "pomodoros/\(pomodoro.id)/start", method: "POST"
+            )
+            pomodoroId = pomodoro.id
+            pomodoroName = pomodoro.name
+            timerId = result.timerId
+            phase = result.phase
+            totalSeconds = result.duration
+            secondsLeft = result.duration
+            isPaused = false
+            isFinished = false
+            startTicking()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func togglePause() async {
+        guard let client, let pomodoroId else { return }
+        errorMessage = nil
+        do {
+            if isPaused {
+                let json = try await client.requestRaw("pomodoros/\(pomodoroId)/resume", method: "POST")
+                secondsLeft = intFromAny(json["time_left"])
+                isPaused = false
+            } else {
+                let json = try await client.requestRaw("pomodoros/\(pomodoroId)/pause", method: "POST")
+                secondsLeft = intFromAny(json["time_left"])
+                isPaused = true
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func stop() async {
+        guard let client, let pomodoroId else { return }
+        errorMessage = nil
+        do {
+            try await client.requestRaw("pomodoros/\(pomodoroId)/stop", method: "POST")
+            reset()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func advancePhase() async {
+        guard let client, let pomodoroId else { return }
+        errorMessage = nil
+        do {
+            struct AdvancePhaseResult: Decodable {
+                var isFinal: Bool
+                var phase: String?
+                @FlexibleOptionalInt var duration: Int?
+            }
+            let result: AdvancePhaseResult = try await client.request(
+                "pomodoros/\(pomodoroId)/advance-phase", method: "POST"
+            )
+            if result.isFinal {
+                if let timerId {
+                    try? await client.requestRaw("complete?timer_id=\(timerId)", method: "POST")
+                }
+                ticker?.invalidate()
+                isFinished = true
+            } else {
+                phase = result.phase ?? phase
+                totalSeconds = result.duration ?? totalSeconds
+                secondsLeft = result.duration ?? 0
+                isPaused = false
+                startTicking()
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+}
+
 // MARK: - Tela de Login
 
 struct LoginView: View {
@@ -311,10 +512,38 @@ struct LoginView: View {
     }
 }
 
-// MARK: - Tela: Lista de Pomodoros
+// MARK: - Raíz con navegación por abas
 
-struct PomodorosListView: View {
+struct RootTabView: View {
+    @State private var selectedTab = 0
+
+    var body: some View {
+        TabView(selection: $selectedTab) {
+            MiCuentaView(selectedTab: $selectedTab)
+                .tabItem { Label("Mi cuenta", systemImage: "person.crop.circle") }
+                .tag(0)
+
+            AhoraMismoView()
+                .tabItem { Label("Ahora mismo", systemImage: "timer") }
+                .tag(1)
+
+            AlarmasView()
+                .tabItem { Label("Alarmas", systemImage: "alarm") }
+                .tag(2)
+
+            TemporizadoresView()
+                .tabItem { Label("Temporizadores", systemImage: "hourglass") }
+                .tag(3)
+        }
+    }
+}
+
+// MARK: - Tela: Mi cuenta (gestión y creación — no controla nada en marcha)
+
+struct MiCuentaView: View {
     @EnvironmentObject var session: SessionStore
+    @EnvironmentObject var activeTimer: ActiveTimerStore
+    @Binding var selectedTab: Int
 
     @State private var pomodoros: [Pomodoro] = []
     @State private var isLoading = false
@@ -323,51 +552,87 @@ struct PomodorosListView: View {
 
     var body: some View {
         NavigationStack {
-            Group {
-                if isLoading && pomodoros.isEmpty {
-                    ProgressView("Cargando...")
-                } else if let errorMessage {
-                    VStack(spacing: 12) {
-                        Text(errorMessage).foregroundStyle(.red)
-                        Button("Reintentar") { Task { await load() } }
-                    }
-                } else if pomodoros.isEmpty {
-                    ContentUnavailableView(
-                        "Sin pomodoros",
-                        systemImage: "timer",
-                        description: Text("Todavía no has creado ningún pomodoro.")
-                    )
-                } else {
-                    List(pomodoros) { pomodoro in
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(pomodoro.name).font(.headline)
-                            Text("\(pomodoro.work) / \(pomodoro.shortBreak) / \(pomodoro.longBreak) min")
-                                .font(.subheadline)
+            List {
+                Section {
+                    HStack(spacing: 12) {
+                        Image(systemName: "person.crop.circle.fill")
+                            .font(.system(size: 40))
+                            .foregroundStyle(.secondary)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(session.username).font(.headline)
+                            Text(session.baseURL.contains("local") ? "Servidor local" : "Producción")
+                                .font(.caption)
                                 .foregroundStyle(.secondary)
-                            if let lastUsed = pomodoro.lastUsedLabel {
-                                Text("Último uso: \(lastUsed)")
-                                    .font(.caption)
-                                    .foregroundStyle(.tertiary)
-                            }
                         }
-                        .padding(.vertical, 4)
+                        Spacer()
+                        Button("Salir") { session.logout() }
+                            .font(.footnote)
                     }
-                    .refreshable { await load() }
+                    .padding(.vertical, 4)
                 }
-            }
-            .navigationTitle("Pomodoros")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
+
+                Section("Pomodoros guardados") {
+                    if isLoading && pomodoros.isEmpty {
+                        ProgressView()
+                    } else if let errorMessage {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(errorMessage).foregroundStyle(.red).font(.footnote)
+                            Button("Reintentar") { Task { await load() } }
+                        }
+                    } else if pomodoros.isEmpty {
+                        Text("Todavía no has creado ningún pomodoro.")
+                            .foregroundStyle(.secondary)
+                            .font(.footnote)
+                    } else {
+                        ForEach(pomodoros) { pomodoro in
+                            Button {
+                                Task {
+                                    await activeTimer.start(pomodoro: pomodoro)
+                                    selectedTab = 1
+                                }
+                            } label: {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(pomodoro.name).font(.headline)
+                                        Text("\(pomodoro.work) / \(pomodoro.shortBreak) / \(pomodoro.longBreak) min")
+                                            .font(.subheadline)
+                                            .foregroundStyle(.secondary)
+                                        if let lastUsed = pomodoro.lastUsedLabel {
+                                            Text("Último uso: \(lastUsed)")
+                                                .font(.caption)
+                                                .foregroundStyle(.tertiary)
+                                        }
+                                    }
+                                    Spacer()
+                                    Image(systemName: "play.circle.fill")
+                                        .font(.title2)
+                                        .foregroundStyle(.red)
+                                }
+                                .padding(.vertical, 4)
+                            }
+                            .buttonStyle(.plain)
+                            .foregroundStyle(.primary)
+                        }
+                        .onDelete(perform: delete)
+                    }
+                }
+
+                Section {
                     Button {
                         showingCreate = true
                     } label: {
-                        Image(systemName: "plus")
+                        Label("Nuevo pomodoro", systemImage: "plus")
                     }
                 }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Salir") { session.logout() }
+
+                Section("Alarmas") {
+                    Text("Vista rápida próximamente — gestiona tus alarmas en la pestaña Alarmas.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                 }
             }
+            .navigationTitle("Mi cuenta")
+            .refreshable { await load() }
             .sheet(isPresented: $showingCreate) {
                 CreatePomodoroView(onCreated: { Task { await load() } })
                     .environmentObject(session)
@@ -386,6 +651,16 @@ struct PomodorosListView: View {
             errorMessage = error.localizedDescription
         }
     }
+
+    private func delete(at offsets: IndexSet) {
+        let idsToDelete = offsets.map { pomodoros[$0].id }
+        pomodoros.remove(atOffsets: offsets)
+        Task {
+            for id in idsToDelete {
+                try? await session.client.requestRaw("pomodoros/\(id)", method: "DELETE")
+            }
+        }
+    }
 }
 
 // MARK: - Tela: Crear Pomodoro
@@ -402,6 +677,9 @@ struct CreatePomodoroView: View {
     @State private var longBreak: Int = 15
     @State private var cycles: Int = 4
     @State private var repetitions: Int = 1
+    @State private var showingAdvanced = false
+    @State private var autoStart = false
+    @State private var pauseOnEnd = true
     @State private var isSaving = false
     @State private var errorMessage: String?
 
@@ -415,12 +693,23 @@ struct CreatePomodoroView: View {
                 Section("Duración (minutos)") {
                     Stepper("Trabajo: \(work) min", value: $work, in: 1...120)
                     Stepper("Descanso corto: \(shortBreak) min", value: $shortBreak, in: 1...60)
+                }
+
+                Section {
+                    Stepper("Cada \(cycles) ciclos → descanso largo", value: $cycles, in: 1...12)
                     Stepper("Descanso largo: \(longBreak) min", value: $longBreak, in: 1...60)
                 }
 
-                Section("Ciclos y repeticiones") {
-                    Stepper("Ciclos antes del descanso largo: \(cycles)", value: $cycles, in: 1...12)
-                    Stepper("Repeticiones: \(repetitions)", value: $repetitions, in: 1...20)
+                DisclosureGroup("Opciones avanzadas", isExpanded: $showingAdvanced) {
+                    Stepper("Repetir secuencia: \(repetitions)", value: $repetitions, in: 1...20)
+                    Toggle("Auto-iniciar siguiente fase", isOn: $autoStart)
+                    Toggle("Pausar al finalizar sesión", isOn: $pauseOnEnd)
+                }
+
+                Section {
+                    Text("Ejemplo: \(work) min trabajo → \(shortBreak) min descanso corto → cada \(cycles) ciclos, \(longBreak) min descanso largo")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                 }
 
                 if let errorMessage {
@@ -465,7 +754,758 @@ struct CreatePomodoroView: View {
                     "long_break": longBreak,
                     "cycles": cycles,
                     "repetitions": repetitions,
+                    "auto_start": autoStart ? 1 : 0,
+                    "pause_on_end": pauseOnEnd ? 1 : 0,
                 ]
+            )
+            onCreated()
+            dismiss()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+}
+
+// MARK: - Tela: Ahora mismo (control en vivo — la pantalla más importante)
+
+struct CircularTimerRing: View {
+    var progress: Double
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .stroke(Color.gray.opacity(0.15), lineWidth: 16)
+            Circle()
+                .trim(from: 0, to: max(0, min(1, progress)))
+                .stroke(Color.red, style: StrokeStyle(lineWidth: 16, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+                .animation(.linear(duration: 0.9), value: progress)
+        }
+    }
+}
+
+struct UpcomingAlarma: Decodable, Identifiable {
+    @FlexibleInt var id: Int
+    var name: String
+    var time: String
+    var sound: String?
+}
+
+struct AhoraMismoView: View {
+    @EnvironmentObject var session: SessionStore
+    @EnvironmentObject var activeTimer: ActiveTimerStore
+    @EnvironmentObject var activeTemporizadores: ActiveTemporizadoresStore
+
+    @State private var upcomingAlarmas: [UpcomingAlarma] = []
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 28) {
+                    if activeTimer.isFinished {
+                        VStack(spacing: 12) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 56))
+                                .foregroundStyle(.green)
+                            Text("¡Pomodoro completo!")
+                                .font(.title2.bold())
+                            Button("Cerrar") { activeTimer.reset() }
+                                .buttonStyle(.bordered)
+                        }
+                        .padding(.top, 40)
+                    } else if activeTimer.hasActive {
+                        VStack(spacing: 16) {
+                            Text(activeTimer.pomodoroName)
+                                .font(.headline)
+                                .foregroundStyle(.secondary)
+
+                            ZStack {
+                                CircularTimerRing(progress: activeTimer.progress)
+                                    .frame(width: 220, height: 220)
+                                VStack(spacing: 6) {
+                                    Text(activeTimer.phaseLabel)
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                    Text(timeString(activeTimer.secondsLeft))
+                                        .font(.system(size: 44, weight: .bold, design: .rounded))
+                                        .monospacedDigit()
+                                }
+                            }
+                            .padding(.top, 12)
+
+                            if activeTimer.secondsLeft <= 0 {
+                                Button("Avanzar fase") {
+                                    Task { await activeTimer.advancePhase() }
+                                }
+                                .buttonStyle(.borderedProminent)
+                            } else {
+                                HStack(spacing: 16) {
+                                    Button(activeTimer.isPaused ? "Reanudar" : "Pausar") {
+                                        Task { await activeTimer.togglePause() }
+                                    }
+                                    .buttonStyle(.bordered)
+
+                                    Button("Cancelar") {
+                                        Task { await activeTimer.stop() }
+                                    }
+                                    .buttonStyle(.bordered)
+                                    .tint(.red)
+                                }
+                            }
+
+                            if let errorMessage = activeTimer.errorMessage {
+                                Text(errorMessage)
+                                    .foregroundStyle(.red)
+                                    .font(.footnote)
+                            }
+                        }
+                        .padding()
+                    } else {
+                        ContentUnavailableView(
+                            "Nada en marcha",
+                            systemImage: "timer",
+                            description: Text("Inicia un pomodoro desde Mi cuenta para verlo aquí.")
+                        )
+                        .padding(.top, 40)
+                    }
+
+                    Divider().padding(.horizontal)
+
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Temporizadores activos").font(.headline)
+                        if activeTemporizadores.items.isEmpty {
+                            Text("Ninguno en marcha.")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        } else {
+                            ForEach(activeTemporizadores.items) { item in
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(item.name).font(.subheadline.weight(.medium))
+                                        Text(timeString(item.secondsLeft))
+                                            .font(.footnote)
+                                            .foregroundStyle(.secondary)
+                                            .monospacedDigit()
+                                    }
+                                    Spacer()
+                                    Button {
+                                        Task { await activeTemporizadores.togglePause(item) }
+                                    } label: {
+                                        Image(systemName: item.isPaused ? "play.fill" : "pause.fill")
+                                    }
+                                    .buttonStyle(.bordered)
+                                    Button {
+                                        Task { await activeTemporizadores.stop(item) }
+                                    } label: {
+                                        Image(systemName: "stop.fill")
+                                    }
+                                    .buttonStyle(.bordered)
+                                    .tint(.red)
+                                }
+                            }
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal)
+
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Próximas alarmas").font(.headline)
+                        if upcomingAlarmas.isEmpty {
+                            Text("Ninguna programada.")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        } else {
+                            ForEach(upcomingAlarmas) { alarma in
+                                HStack {
+                                    Text(alarma.name).font(.subheadline)
+                                    Spacer()
+                                    Text(alarma.time)
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                        .monospacedDigit()
+                                }
+                            }
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal)
+                }
+                .padding(.bottom, 24)
+            }
+            .navigationTitle("Ahora mismo")
+            .task { await loadUpcomingAlarmas() }
+            .refreshable { await loadUpcomingAlarmas() }
+        }
+    }
+
+    private func loadUpcomingAlarmas() async {
+        do {
+            upcomingAlarmas = try await session.client.request("alarmas/upcoming")
+        } catch {
+            // Silencioso: esta sección es solo un preview, no bloquea la pantalla.
+        }
+    }
+
+    private func timeString(_ seconds: Int) -> String {
+        let total = max(0, seconds)
+        return String(format: "%02d:%02d", total / 60, total % 60)
+    }
+}
+
+// MARK: - Tela: Alarmas (todavía no conectada a la API)
+
+struct Alarma: Decodable, Identifiable {
+    @FlexibleInt var id: Int
+    var name: String
+    var time: String // "HH:MM:SS"
+    @FlexibleInt var isActive: Int
+    var repeatMode: String
+    var startDate: String?
+    var endDate: String?
+    var sound: String?
+    @FlexibleInt var mon: Int
+    @FlexibleInt var tue: Int
+    @FlexibleInt var wed: Int
+    @FlexibleInt var thu: Int
+    @FlexibleInt var fri: Int
+    @FlexibleInt var sat: Int
+    @FlexibleInt var sun: Int
+    var timeLabel: String?
+    var repeatLabel: String?
+
+    var isOn: Bool { isActive != 0 }
+}
+
+struct AlarmasView: View {
+    @EnvironmentObject var session: SessionStore
+
+    @State private var alarmas: [Alarma] = []
+    @State private var isLoading = false
+    @State private var errorMessage: String?
+    @State private var showingCreate = false
+    @State private var editingAlarma: Alarma?
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if isLoading && alarmas.isEmpty {
+                    ProgressView("Cargando...")
+                } else if let errorMessage {
+                    VStack(spacing: 12) {
+                        Text(errorMessage).foregroundStyle(.red)
+                        Button("Reintentar") { Task { await load() } }
+                    }
+                } else if alarmas.isEmpty {
+                    ContentUnavailableView(
+                        "Sin alarmas",
+                        systemImage: "alarm",
+                        description: Text("Todavía no has creado ninguna alarma.")
+                    )
+                } else {
+                    List {
+                        ForEach(alarmas) { alarma in
+                            Button {
+                                editingAlarma = alarma
+                            } label: {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(alarma.name).font(.headline)
+                                        Text(alarma.timeLabel ?? alarma.time)
+                                            .font(.subheadline)
+                                            .foregroundStyle(.secondary)
+                                        Text(alarma.repeatLabel ?? alarma.repeatMode)
+                                            .font(.caption)
+                                            .foregroundStyle(.tertiary)
+                                    }
+                                    Spacer()
+                                    Toggle("", isOn: Binding(
+                                        get: { alarma.isOn },
+                                        set: { _ in Task { await toggle(alarma) } }
+                                    ))
+                                    .labelsHidden()
+                                }
+                                .padding(.vertical, 4)
+                            }
+                            .buttonStyle(.plain)
+                            .foregroundStyle(.primary)
+                        }
+                        .onDelete(perform: delete)
+                    }
+                    .refreshable { await load() }
+                }
+            }
+            .navigationTitle("Alarmas")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        showingCreate = true
+                    } label: {
+                        Image(systemName: "plus")
+                    }
+                }
+            }
+            .sheet(isPresented: $showingCreate) {
+                AlarmaFormView(existing: nil, onSaved: { Task { await load() } })
+                    .environmentObject(session)
+            }
+            .sheet(item: $editingAlarma) { alarma in
+                AlarmaFormView(existing: alarma, onSaved: { Task { await load() } })
+                    .environmentObject(session)
+            }
+        }
+        .task { await load() }
+    }
+
+    private func load() async {
+        errorMessage = nil
+        isLoading = true
+        defer { isLoading = false }
+        do {
+            alarmas = try await session.client.request("alarmas")
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    private func toggle(_ alarma: Alarma) async {
+        do {
+            try await session.client.requestRaw("alarmas/\(alarma.id)/toggle", method: "POST")
+            await load()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    private func delete(at offsets: IndexSet) {
+        let idsToDelete = offsets.map { alarmas[$0].id }
+        alarmas.remove(atOffsets: offsets)
+        Task {
+            for id in idsToDelete {
+                try? await session.client.requestRaw("alarmas/\(id)", method: "DELETE")
+            }
+        }
+    }
+}
+
+// MARK: - Tela: Crear/Editar Alarma
+
+struct AlarmaFormView: View {
+    @EnvironmentObject var session: SessionStore
+    @Environment(\.dismiss) private var dismiss
+
+    var existing: Alarma?
+    var onSaved: () -> Void
+
+    @State private var name: String = ""
+    @State private var time: Date = Date()
+    @State private var repeatMode: String = "none"
+    @State private var days: Set<String> = []
+    @State private var isSaving = false
+    @State private var errorMessage: String?
+
+    private let repeatOptions: [(key: String, label: String)] = [
+        ("none", "Sin repetición"),
+        ("daily", "Diariamente"),
+        ("weekdays", "Lunes a Viernes"),
+        ("custom", "Personalizado"),
+    ]
+
+    private let dayOptions: [(key: String, label: String)] = [
+        ("mon", "L"), ("tue", "M"), ("wed", "X"), ("thu", "J"),
+        ("fri", "V"), ("sat", "S"), ("sun", "D"),
+    ]
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Nombre") {
+                    TextField("Ej: Despertador", text: $name)
+                }
+
+                Section("Hora") {
+                    DatePicker("Hora", selection: $time, displayedComponents: .hourAndMinute)
+                        .datePickerStyle(.wheel)
+                        .labelsHidden()
+                }
+
+                Section("Repetición") {
+                    Picker("Repetición", selection: $repeatMode) {
+                        ForEach(repeatOptions, id: \.key) { option in
+                            Text(option.label).tag(option.key)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+
+                    if repeatMode == "custom" {
+                        HStack {
+                            ForEach(dayOptions, id: \.key) { day in
+                                Button {
+                                    if days.contains(day.key) {
+                                        days.remove(day.key)
+                                    } else {
+                                        days.insert(day.key)
+                                    }
+                                } label: {
+                                    Text(day.label)
+                                        .frame(width: 32, height: 32)
+                                        .background(days.contains(day.key) ? Color.red : Color.gray.opacity(0.15))
+                                        .foregroundStyle(days.contains(day.key) ? .white : .primary)
+                                        .clipShape(Circle())
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .padding(.vertical, 4)
+                    }
+                }
+
+                if let errorMessage {
+                    Text(errorMessage)
+                        .foregroundStyle(.red)
+                        .font(.footnote)
+                }
+            }
+            .navigationTitle(existing == nil ? "Nueva alarma" : "Editar alarma")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancelar") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button {
+                        Task { await save() }
+                    } label: {
+                        if isSaving {
+                            ProgressView()
+                        } else {
+                            Text("Guardar")
+                        }
+                    }
+                    .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty || isSaving)
+                }
+            }
+        }
+        .onAppear { populateFromExisting() }
+    }
+
+    private func populateFromExisting() {
+        guard let existing else { return }
+        name = existing.name
+        repeatMode = existing.repeatMode
+        days = Set(dayOptions.map(\.key).filter { key in
+            switch key {
+            case "mon": return existing.mon != 0
+            case "tue": return existing.tue != 0
+            case "wed": return existing.wed != 0
+            case "thu": return existing.thu != 0
+            case "fri": return existing.fri != 0
+            case "sat": return existing.sat != 0
+            case "sun": return existing.sun != 0
+            default: return false
+            }
+        })
+        let parts = existing.time.split(separator: ":")
+        if parts.count >= 2, let hour = Int(parts[0]), let minute = Int(parts[1]) {
+            var components = Calendar.current.dateComponents([.year, .month, .day], from: Date())
+            components.hour = hour
+            components.minute = minute
+            time = Calendar.current.date(from: components) ?? Date()
+        }
+    }
+
+    private func save() async {
+        errorMessage = nil
+        isSaving = true
+        defer { isSaving = false }
+
+        let components = Calendar.current.dateComponents([.hour, .minute], from: time)
+        let timeString = String(format: "%02d:%02d:00", components.hour ?? 0, components.minute ?? 0)
+
+        var body: [String: Any] = [
+            "name": name,
+            "time": timeString,
+            "repeat_mode": repeatMode,
+            "is_active": existing?.isActive ?? 1,
+        ]
+        for day in dayOptions {
+            body[day.key] = days.contains(day.key) ? 1 : 0
+        }
+
+        do {
+            if let existing {
+                let _: Alarma = try await session.client.request(
+                    "alarmas/\(existing.id)", method: "PUT", body: body
+                )
+            } else {
+                let _: Alarma = try await session.client.request(
+                    "alarmas", method: "POST", body: body
+                )
+            }
+            onSaved()
+            dismiss()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+}
+
+// MARK: - Tela: Temporizadores (todavía no conectada a la API)
+
+struct Temporizador: Decodable, Identifiable {
+    @FlexibleInt var id: Int
+    var name: String
+    @FlexibleInt var duration: Int
+    var sound: String?
+    var durationLabel: String?
+    var lastUsedLabel: String?
+}
+
+/// Una instancia en marcha de un temporizador. A diferencia de los pomodoros,
+/// varios pueden coexistir — por eso este estado es una lista, no un único
+/// pomodoro activo.
+struct ActiveTemporizadorItem: Identifiable {
+    let timerId: Int
+    let name: String
+    var secondsLeft: Int
+    var isPaused: Bool
+    var id: Int { timerId }
+}
+
+@MainActor
+final class ActiveTemporizadoresStore: ObservableObject {
+    @Published var items: [ActiveTemporizadorItem] = []
+    @Published var errorMessage: String?
+
+    private var client: APIClient?
+    private var ticker: Timer?
+
+    func configure(client: APIClient?) {
+        self.client = client
+        if client == nil {
+            ticker?.invalidate()
+            ticker = nil
+            items = []
+        }
+    }
+
+    private func intFromAny(_ value: Any?) -> Int {
+        if let n = value as? Int { return n }
+        if let n = value as? NSNumber { return n.intValue }
+        if let s = value as? String { return Int(s) ?? 0 }
+        return 0
+    }
+
+    private func ensureTicking() {
+        guard ticker == nil else { return }
+        ticker = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
+            guard let self else { return }
+            Task { @MainActor [self] in
+                for index in self.items.indices {
+                    if !self.items[index].isPaused && self.items[index].secondsLeft > 0 {
+                        self.items[index].secondsLeft -= 1
+                    }
+                }
+            }
+        }
+    }
+
+    func start(temporizador: Temporizador) async {
+        guard let client else { return }
+        errorMessage = nil
+        do {
+            let json = try await client.requestRaw("temporizadores/\(temporizador.id)/start", method: "POST")
+            let timerId = intFromAny(json["timer_id"])
+            let duration = intFromAny(json["duration"])
+            items.append(ActiveTemporizadorItem(timerId: timerId, name: temporizador.name, secondsLeft: duration, isPaused: false))
+            ensureTicking()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func togglePause(_ item: ActiveTemporizadorItem) async {
+        guard let client, let index = items.firstIndex(where: { $0.timerId == item.timerId }) else { return }
+        errorMessage = nil
+        do {
+            if items[index].isPaused {
+                let json = try await client.requestRaw("temporizadores/\(item.timerId)/resume", method: "POST")
+                items[index].secondsLeft = intFromAny(json["time_left"])
+                items[index].isPaused = false
+            } else {
+                let json = try await client.requestRaw("temporizadores/\(item.timerId)/pause", method: "POST")
+                items[index].secondsLeft = intFromAny(json["time_left"])
+                items[index].isPaused = true
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func stop(_ item: ActiveTemporizadorItem) async {
+        guard let client else { return }
+        errorMessage = nil
+        do {
+            try await client.requestRaw("temporizadores/\(item.timerId)/stop", method: "POST")
+            items.removeAll { $0.timerId == item.timerId }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+}
+
+struct TemporizadoresView: View {
+    @EnvironmentObject var session: SessionStore
+    @EnvironmentObject var activeTemporizadores: ActiveTemporizadoresStore
+
+    @State private var temporizadores: [Temporizador] = []
+    @State private var isLoading = false
+    @State private var errorMessage: String?
+    @State private var showingCreate = false
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if isLoading && temporizadores.isEmpty {
+                    ProgressView("Cargando...")
+                } else if let errorMessage {
+                    VStack(spacing: 12) {
+                        Text(errorMessage).foregroundStyle(.red)
+                        Button("Reintentar") { Task { await load() } }
+                    }
+                } else if temporizadores.isEmpty {
+                    ContentUnavailableView(
+                        "Sin temporizadores",
+                        systemImage: "hourglass",
+                        description: Text("Todavía no has creado ningún temporizador.")
+                    )
+                } else {
+                    List {
+                        ForEach(temporizadores) { temporizador in
+                            Button {
+                                Task { await activeTemporizadores.start(temporizador: temporizador) }
+                            } label: {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(temporizador.name).font(.headline)
+                                        Text(temporizador.durationLabel ?? "\(temporizador.duration) s")
+                                            .font(.subheadline)
+                                            .foregroundStyle(.secondary)
+                                        if let lastUsed = temporizador.lastUsedLabel {
+                                            Text("Último uso: \(lastUsed)")
+                                                .font(.caption)
+                                                .foregroundStyle(.tertiary)
+                                        }
+                                    }
+                                    Spacer()
+                                    Image(systemName: "play.circle.fill")
+                                        .font(.title2)
+                                        .foregroundStyle(.red)
+                                }
+                                .padding(.vertical, 4)
+                            }
+                            .buttonStyle(.plain)
+                            .foregroundStyle(.primary)
+                        }
+                        .onDelete(perform: delete)
+                    }
+                    .refreshable { await load() }
+                }
+            }
+            .navigationTitle("Temporizadores")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        showingCreate = true
+                    } label: {
+                        Image(systemName: "plus")
+                    }
+                }
+            }
+            .sheet(isPresented: $showingCreate) {
+                CreateTemporizadorView(onCreated: { Task { await load() } })
+                    .environmentObject(session)
+            }
+        }
+        .task { await load() }
+    }
+
+    private func load() async {
+        errorMessage = nil
+        isLoading = true
+        defer { isLoading = false }
+        do {
+            temporizadores = try await session.client.request("temporizadores")
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    private func delete(at offsets: IndexSet) {
+        let idsToDelete = offsets.map { temporizadores[$0].id }
+        temporizadores.remove(atOffsets: offsets)
+        Task {
+            for id in idsToDelete {
+                try? await session.client.requestRaw("temporizadores/\(id)", method: "DELETE")
+            }
+        }
+    }
+}
+
+// MARK: - Tela: Crear Temporizador
+
+struct CreateTemporizadorView: View {
+    @EnvironmentObject var session: SessionStore
+    @Environment(\.dismiss) private var dismiss
+
+    var onCreated: () -> Void
+
+    @State private var name: String = ""
+    @State private var minutes: Int = 10
+    @State private var isSaving = false
+    @State private var errorMessage: String?
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Nombre") {
+                    TextField("Ej: Ejercicio, Descanso...", text: $name)
+                }
+                Section("Duración") {
+                    Stepper("\(minutes) min", value: $minutes, in: 1...180)
+                }
+                if let errorMessage {
+                    Text(errorMessage).foregroundStyle(.red).font(.footnote)
+                }
+            }
+            .navigationTitle("Nuevo temporizador")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancelar") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button {
+                        Task { await save() }
+                    } label: {
+                        if isSaving {
+                            ProgressView()
+                        } else {
+                            Text("Guardar")
+                        }
+                    }
+                    .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty || isSaving)
+                }
+            }
+        }
+    }
+
+    private func save() async {
+        errorMessage = nil
+        isSaving = true
+        defer { isSaving = false }
+        do {
+            let _: Temporizador = try await session.client.request(
+                "temporizadores",
+                method: "POST",
+                body: ["name": name, "duration": minutes * 60]
             )
             onCreated()
             dismiss()
@@ -479,16 +1519,32 @@ struct CreatePomodoroView: View {
 
 struct ContentView: View {
     @StateObject private var session = SessionStore()
+    @StateObject private var activeTimer = ActiveTimerStore()
+    @StateObject private var activeTemporizadores = ActiveTemporizadoresStore()
 
     var body: some View {
         Group {
             if session.isLoggedIn {
-                PomodorosListView()
+                RootTabView()
             } else {
                 LoginView()
             }
         }
         .environmentObject(session)
+        .environmentObject(activeTimer)
+        .environmentObject(activeTemporizadores)
+        .onAppear {
+            configureStores(loggedIn: session.isLoggedIn)
+        }
+        .onChange(of: session.isLoggedIn) { _, isLoggedIn in
+            configureStores(loggedIn: isLoggedIn)
+        }
+    }
+
+    private func configureStores(loggedIn: Bool) {
+        let client = loggedIn ? session.client : nil
+        activeTimer.configure(client: client)
+        activeTemporizadores.configure(client: client)
     }
 }
 
