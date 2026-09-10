@@ -16,6 +16,7 @@
 		84790F4A11E7F43767E7FE31 /* ActiveTimerStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C531E5BA2C52E93488262A0 /* ActiveTimerStore.swift */; };
 		0AF09A3B74FECBDAD5B5A57F /* ActiveTemporizadoresStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCEA6A633FC9437E3425DA7C /* ActiveTemporizadoresStore.swift */; };
 		C3AB277A738AB41300223CB2 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDD14FC181BE7B3758166C8D /* LoginView.swift */; };
+		1265B857421ACA89FCB351FE /* DevCredentials.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEA1A1B97D65B1CC6CA20776 /* DevCredentials.swift */; };
 		75CF5EC9305D05489D38DEF5 /* RootTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E42D473D0DDBF0D362B59BC4 /* RootTabView.swift */; };
 		D0B5F297BFDDE1DB281E36C2 /* MiCuentaView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD8398FD881B96397C9B62F0 /* MiCuentaView.swift */; };
 		DE7BAEE41A72F193046C3164 /* CreatePomodoroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FFCD9FF353F667571527332 /* CreatePomodoroView.swift */; };
@@ -39,6 +40,7 @@
 		2C531E5BA2C52E93488262A0 /* ActiveTimerStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveTimerStore.swift; sourceTree = "<group>"; };
 		CCEA6A633FC9437E3425DA7C /* ActiveTemporizadoresStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveTemporizadoresStore.swift; sourceTree = "<group>"; };
 		EDD14FC181BE7B3758166C8D /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		DEA1A1B97D65B1CC6CA20776 /* DevCredentials.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevCredentials.swift; sourceTree = "<group>"; };
 		E42D473D0DDBF0D362B59BC4 /* RootTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootTabView.swift; sourceTree = "<group>"; };
 		DD8398FD881B96397C9B62F0 /* MiCuentaView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiCuentaView.swift; sourceTree = "<group>"; };
 		5FFCD9FF353F667571527332 /* CreatePomodoroView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatePomodoroView.swift; sourceTree = "<group>"; };
@@ -90,6 +92,7 @@
 				2C531E5BA2C52E93488262A0 /* ActiveTimerStore.swift */,
 				CCEA6A633FC9437E3425DA7C /* ActiveTemporizadoresStore.swift */,
 				EDD14FC181BE7B3758166C8D /* LoginView.swift */,
+				DEA1A1B97D65B1CC6CA20776 /* DevCredentials.swift */,
 				E42D473D0DDBF0D362B59BC4 /* RootTabView.swift */,
 				DD8398FD881B96397C9B62F0 /* MiCuentaView.swift */,
 				5FFCD9FF353F667571527332 /* CreatePomodoroView.swift */,
@@ -191,6 +194,7 @@
 				84790F4A11E7F43767E7FE31 /* ActiveTimerStore.swift in Sources */,
 				0AF09A3B74FECBDAD5B5A57F /* ActiveTemporizadoresStore.swift in Sources */,
 				C3AB277A738AB41300223CB2 /* LoginView.swift in Sources */,
+				1265B857421ACA89FCB351FE /* DevCredentials.swift in Sources */,
 				75CF5EC9305D05489D38DEF5 /* RootTabView.swift in Sources */,
 				D0B5F297BFDDE1DB281E36C2 /* MiCuentaView.swift in Sources */,
 				DE7BAEE41A72F193046C3164 /* CreatePomodoroView.swift in Sources */,

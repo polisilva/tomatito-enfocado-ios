@@ -7,3 +7,6 @@ xcuserdata/
 *.moved-aside
 *.xccheckout
 *.xcscmblueprint
+
+# Credenciales de desarrollo local (contraseña real) — nunca va a GitHub.
+TomatitoEnfocado/TomatitoEnfocado/DevCredentials.swift

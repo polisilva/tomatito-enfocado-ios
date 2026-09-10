@@ -10,9 +10,12 @@ import SwiftUI
 struct LoginView: View {
     @EnvironmentObject var session: SessionStore
 
-    @State private var baseURL: String = "https://focus.omkrom.com"
-    @State private var username: String = ""
-    @State private var appPassword: String = ""
+    // Precargados desde DevCredentials.swift (solo existe en este Mac,
+    // nunca va a GitHub) para no escribir la contraseña cada vez que se
+    // reinstala el app durante el desarrollo.
+    @State private var baseURL: String = DevCredentials.baseURL
+    @State private var username: String = DevCredentials.username
+    @State private var appPassword: String = DevCredentials.appPassword
     @State private var isLoading = false
     @State private var errorMessage: String?
 
