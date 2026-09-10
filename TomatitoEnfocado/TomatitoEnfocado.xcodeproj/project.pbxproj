@@ -9,6 +9,21 @@
 /* Begin PBXBuildFile section */
 		E6777C4330494BA700C4512F /* TomatitoEnfocadoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6777C4230494BA700C4512F /* TomatitoEnfocadoApp.swift */; };
 		E6777C4530494BA700C4512F /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6777C4430494BA700C4512F /* ContentView.swift */; };
+		344651ECDB7A8B387BAF4E73 /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4942CA84ABF2772E4C818737 /* KeychainHelper.swift */; };
+		735A2B756DD8AA595A469899 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29FED0233112F42283C8E477 /* APIClient.swift */; };
+		42DFC59BAF085DF96DFA0B43 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 107314EA309C8F481DE657DE /* Models.swift */; };
+		D18AE36B91DBD0750F92B683 /* SessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51BA668F73B84C5AB7F95001 /* SessionStore.swift */; };
+		84790F4A11E7F43767E7FE31 /* ActiveTimerStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C531E5BA2C52E93488262A0 /* ActiveTimerStore.swift */; };
+		0AF09A3B74FECBDAD5B5A57F /* ActiveTemporizadoresStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCEA6A633FC9437E3425DA7C /* ActiveTemporizadoresStore.swift */; };
+		C3AB277A738AB41300223CB2 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDD14FC181BE7B3758166C8D /* LoginView.swift */; };
+		75CF5EC9305D05489D38DEF5 /* RootTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E42D473D0DDBF0D362B59BC4 /* RootTabView.swift */; };
+		D0B5F297BFDDE1DB281E36C2 /* MiCuentaView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD8398FD881B96397C9B62F0 /* MiCuentaView.swift */; };
+		DE7BAEE41A72F193046C3164 /* CreatePomodoroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FFCD9FF353F667571527332 /* CreatePomodoroView.swift */; };
+		F6D787E8D38571DD6DB4D346 /* AhoraMismoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8629318B51E184A18B8E01DF /* AhoraMismoView.swift */; };
+		0E6EE84E82B90982348E3A33 /* AlarmasView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43127C7855965F0FF318D2D7 /* AlarmasView.swift */; };
+		0DA95A96699385A3AEC5EFD0 /* AlarmaFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 475055A3C29BB8CF89E4947C /* AlarmaFormView.swift */; };
+		E8EDFEDE93F0E282EDB18525 /* TemporizadoresView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC52D00EDF2794354BE3E00E /* TemporizadoresView.swift */; };
+		D7109A2777009DE3FCB705AD /* CreateTemporizadorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD68B8A1DF7BE0800402F480 /* CreateTemporizadorView.swift */; };
 		E6777C4730494BAA00C4512F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E6777C4630494BAA00C4512F /* Assets.xcassets */; };
 		E6777C4A30494BAA00C4512F /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E6777C4930494BAA00C4512F /* Preview Assets.xcassets */; };
 /* End PBXBuildFile section */
@@ -17,6 +32,21 @@
 		E6777C3F30494BA700C4512F /* TomatitoEnfocado.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TomatitoEnfocado.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E6777C4230494BA700C4512F /* TomatitoEnfocadoApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TomatitoEnfocadoApp.swift; sourceTree = "<group>"; };
 		E6777C4430494BA700C4512F /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		4942CA84ABF2772E4C818737 /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
+		29FED0233112F42283C8E477 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
+		107314EA309C8F481DE657DE /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		51BA668F73B84C5AB7F95001 /* SessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStore.swift; sourceTree = "<group>"; };
+		2C531E5BA2C52E93488262A0 /* ActiveTimerStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveTimerStore.swift; sourceTree = "<group>"; };
+		CCEA6A633FC9437E3425DA7C /* ActiveTemporizadoresStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveTemporizadoresStore.swift; sourceTree = "<group>"; };
+		EDD14FC181BE7B3758166C8D /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		E42D473D0DDBF0D362B59BC4 /* RootTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootTabView.swift; sourceTree = "<group>"; };
+		DD8398FD881B96397C9B62F0 /* MiCuentaView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiCuentaView.swift; sourceTree = "<group>"; };
+		5FFCD9FF353F667571527332 /* CreatePomodoroView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatePomodoroView.swift; sourceTree = "<group>"; };
+		8629318B51E184A18B8E01DF /* AhoraMismoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AhoraMismoView.swift; sourceTree = "<group>"; };
+		43127C7855965F0FF318D2D7 /* AlarmasView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmasView.swift; sourceTree = "<group>"; };
+		475055A3C29BB8CF89E4947C /* AlarmaFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmaFormView.swift; sourceTree = "<group>"; };
+		FC52D00EDF2794354BE3E00E /* TemporizadoresView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemporizadoresView.swift; sourceTree = "<group>"; };
+		AD68B8A1DF7BE0800402F480 /* CreateTemporizadorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateTemporizadorView.swift; sourceTree = "<group>"; };
 		E6777C4630494BAA00C4512F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		E6777C4930494BAA00C4512F /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -53,6 +83,21 @@
 			children = (
 				E6777C4230494BA700C4512F /* TomatitoEnfocadoApp.swift */,
 				E6777C4430494BA700C4512F /* ContentView.swift */,
+				4942CA84ABF2772E4C818737 /* KeychainHelper.swift */,
+				29FED0233112F42283C8E477 /* APIClient.swift */,
+				107314EA309C8F481DE657DE /* Models.swift */,
+				51BA668F73B84C5AB7F95001 /* SessionStore.swift */,
+				2C531E5BA2C52E93488262A0 /* ActiveTimerStore.swift */,
+				CCEA6A633FC9437E3425DA7C /* ActiveTemporizadoresStore.swift */,
+				EDD14FC181BE7B3758166C8D /* LoginView.swift */,
+				E42D473D0DDBF0D362B59BC4 /* RootTabView.swift */,
+				DD8398FD881B96397C9B62F0 /* MiCuentaView.swift */,
+				5FFCD9FF353F667571527332 /* CreatePomodoroView.swift */,
+				8629318B51E184A18B8E01DF /* AhoraMismoView.swift */,
+				43127C7855965F0FF318D2D7 /* AlarmasView.swift */,
+				475055A3C29BB8CF89E4947C /* AlarmaFormView.swift */,
+				FC52D00EDF2794354BE3E00E /* TemporizadoresView.swift */,
+				AD68B8A1DF7BE0800402F480 /* CreateTemporizadorView.swift */,
 				E6777C4630494BAA00C4512F /* Assets.xcassets */,
 				E6777C4830494BAA00C4512F /* Preview Content */,
 			);
@@ -139,6 +184,21 @@
 			files = (
 				E6777C4530494BA700C4512F /* ContentView.swift in Sources */,
 				E6777C4330494BA700C4512F /* TomatitoEnfocadoApp.swift in Sources */,
+				344651ECDB7A8B387BAF4E73 /* KeychainHelper.swift in Sources */,
+				735A2B756DD8AA595A469899 /* APIClient.swift in Sources */,
+				42DFC59BAF085DF96DFA0B43 /* Models.swift in Sources */,
+				D18AE36B91DBD0750F92B683 /* SessionStore.swift in Sources */,
+				84790F4A11E7F43767E7FE31 /* ActiveTimerStore.swift in Sources */,
+				0AF09A3B74FECBDAD5B5A57F /* ActiveTemporizadoresStore.swift in Sources */,
+				C3AB277A738AB41300223CB2 /* LoginView.swift in Sources */,
+				75CF5EC9305D05489D38DEF5 /* RootTabView.swift in Sources */,
+				D0B5F297BFDDE1DB281E36C2 /* MiCuentaView.swift in Sources */,
+				DE7BAEE41A72F193046C3164 /* CreatePomodoroView.swift in Sources */,
+				F6D787E8D38571DD6DB4D346 /* AhoraMismoView.swift in Sources */,
+				0E6EE84E82B90982348E3A33 /* AlarmasView.swift in Sources */,
+				0DA95A96699385A3AEC5EFD0 /* AlarmaFormView.swift in Sources */,
+				E8EDFEDE93F0E282EDB18525 /* TemporizadoresView.swift in Sources */,
+				D7109A2777009DE3FCB705AD /* CreateTemporizadorView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
