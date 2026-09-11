@@ -7,6 +7,68 @@
 
 import SwiftUI
 
+/// Flechas compactas de subir/bajar pegadas al campo, como el <input type="number">
+/// del sitio web — más discretas que un Stepper normal de SwiftUI.
+private struct CompactStepper: View {
+    @Binding var value: Int
+    var range: ClosedRange<Int>
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Button {
+                if value < range.upperBound { value += 1 }
+            } label: {
+                Image(systemName: "chevron.up")
+                    .font(.system(size: 10, weight: .bold))
+                    .frame(width: 22, height: 15)
+            }
+            Divider().frame(width: 18)
+            Button {
+                if value > range.lowerBound { value -= 1 }
+            } label: {
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 10, weight: .bold))
+                    .frame(width: 22, height: 15)
+            }
+        }
+        .background(Color(.systemGray5))
+        .clipShape(RoundedRectangle(cornerRadius: 5))
+    }
+}
+
+/// Campo numérico editable (se puede tocar y escribir) + CompactStepper al lado.
+/// Mantiene su propio texto para no sufrir el problema de SwiftUI donde un
+/// TextField(value:formatter:) se queda en blanco mientras se está borrando.
+private struct MinutesField: View {
+    var label: String
+    @Binding var value: Int
+    var range: ClosedRange<Int> = 1...600
+
+    @State private var text: String = ""
+
+    var body: some View {
+        HStack {
+            Text(label)
+            Spacer()
+            TextField("", text: $text)
+                .keyboardType(.numberPad)
+                .multilineTextAlignment(.trailing)
+                .frame(width: 40)
+                .onChange(of: text) { _, newValue in
+                    if let parsed = Int(newValue), range.contains(parsed) {
+                        value = parsed
+                    }
+                }
+            CompactStepper(value: $value, range: range)
+            Text("min").foregroundStyle(.secondary)
+        }
+        .onAppear { text = String(value) }
+        .onChange(of: value) { _, newValue in
+            if text != String(newValue) { text = String(newValue) }
+        }
+    }
+}
+
 struct CreatePomodoroView: View {
     @EnvironmentObject var session: SessionStore
     @Environment(\.dismiss) private var dismiss
@@ -36,13 +98,6 @@ struct CreatePomodoroView: View {
         ("silent", "Silencioso"),
     ]
 
-    private static let minutesFormatter: NumberFormatter = {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .none
-        formatter.minimum = 1
-        return formatter
-    }()
-
     var body: some View {
         NavigationStack {
             Form {
@@ -51,21 +106,19 @@ struct CreatePomodoroView: View {
                 }
 
                 Section("Duración (minutos)") {
-                    minutesRow("Trabajo", value: $work)
-                    minutesRow("Descanso corto", value: $shortBreak)
+                    MinutesField(label: "Trabajo", value: $work, range: 1...180)
+                    MinutesField(label: "Descanso corto", value: $shortBreak, range: 1...60)
                 }
 
                 Section {
                     HStack {
                         Text("Cada")
-                        TextField("", value: $cycles, formatter: Self.minutesFormatter)
-                            .keyboardType(.numberPad)
-                            .multilineTextAlignment(.center)
-                            .frame(width: 40)
-                        Text("ciclos → descanso largo")
                         Spacer()
+                        CompactStepper(value: $cycles, range: 1...12)
+                            .padding(.trailing, 4)
+                        Text("\(cycles) ciclos → descanso largo")
                     }
-                    minutesRow("Descanso largo", value: $longBreak)
+                    MinutesField(label: "Descanso largo", value: $longBreak, range: 1...120)
                 }
 
                 DisclosureGroup("Opciones avanzadas", isExpanded: $showingAdvanced) {
@@ -121,18 +174,6 @@ struct CreatePomodoroView: View {
                     .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty || isSaving)
                 }
             }
-        }
-    }
-
-    private func minutesRow(_ label: String, value: Binding<Int>) -> some View {
-        HStack {
-            Text(label)
-            Spacer()
-            TextField("", value: value, formatter: Self.minutesFormatter)
-                .keyboardType(.numberPad)
-                .multilineTextAlignment(.trailing)
-                .frame(width: 50)
-            Text("min").foregroundStyle(.secondary)
         }
     }
 
