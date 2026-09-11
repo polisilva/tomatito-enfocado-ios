@@ -180,7 +180,7 @@ struct AhoraMismoView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal)
                 }
-                .padding(.bottom, 24)
+                .padding(.bottom, 48)
             }
             .navigationTitle("Ahora mismo")
             .task { await loadUpcomingAlarmas() }
