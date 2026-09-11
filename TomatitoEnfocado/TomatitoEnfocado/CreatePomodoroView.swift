@@ -22,8 +22,26 @@ struct CreatePomodoroView: View {
     @State private var showingAdvanced = false
     @State private var autoStart = false
     @State private var pauseOnEnd = true
+    @State private var sound: String = "default"
+    @State private var vibration = true
     @State private var isSaving = false
     @State private var errorMessage: String?
+
+    private let soundOptions: [(key: String, label: String)] = [
+        ("default", "Predeterminado (según Ajustes)"),
+        ("clasico", "Clásico"),
+        ("campana", "Campana"),
+        ("digital", "Digital"),
+        ("suave", "Suave"),
+        ("silent", "Silencioso"),
+    ]
+
+    private static let minutesFormatter: NumberFormatter = {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .none
+        formatter.minimum = 1
+        return formatter
+    }()
 
     var body: some View {
         NavigationStack {
@@ -33,13 +51,21 @@ struct CreatePomodoroView: View {
                 }
 
                 Section("Duración (minutos)") {
-                    Stepper("Trabajo: \(work) min", value: $work, in: 1...120)
-                    Stepper("Descanso corto: \(shortBreak) min", value: $shortBreak, in: 1...60)
+                    minutesRow("Trabajo", value: $work)
+                    minutesRow("Descanso corto", value: $shortBreak)
                 }
 
                 Section {
-                    Stepper("Cada \(cycles) ciclos → descanso largo", value: $cycles, in: 1...12)
-                    Stepper("Descanso largo: \(longBreak) min", value: $longBreak, in: 1...60)
+                    HStack {
+                        Text("Cada")
+                        TextField("", value: $cycles, formatter: Self.minutesFormatter)
+                            .keyboardType(.numberPad)
+                            .multilineTextAlignment(.center)
+                            .frame(width: 40)
+                        Text("ciclos → descanso largo")
+                        Spacer()
+                    }
+                    minutesRow("Descanso largo", value: $longBreak)
                 }
 
                 DisclosureGroup("Opciones avanzadas", isExpanded: $showingAdvanced) {
@@ -56,6 +82,13 @@ struct CreatePomodoroView: View {
                         .foregroundStyle(.secondary)
                     Toggle("Auto-iniciar siguiente fase", isOn: $autoStart)
                     Toggle("Pausar al finalizar sesión", isOn: $pauseOnEnd)
+
+                    Picker("Sonido", selection: $sound) {
+                        ForEach(soundOptions, id: \.key) { option in
+                            Text(option.label).tag(option.key)
+                        }
+                    }
+                    Toggle("Vibración", isOn: $vibration)
                 }
 
                 Section {
@@ -91,6 +124,18 @@ struct CreatePomodoroView: View {
         }
     }
 
+    private func minutesRow(_ label: String, value: Binding<Int>) -> some View {
+        HStack {
+            Text(label)
+            Spacer()
+            TextField("", value: value, formatter: Self.minutesFormatter)
+                .keyboardType(.numberPad)
+                .multilineTextAlignment(.trailing)
+                .frame(width: 50)
+            Text("min").foregroundStyle(.secondary)
+        }
+    }
+
     private func save() async {
         errorMessage = nil
         isSaving = true
@@ -104,6 +149,8 @@ struct CreatePomodoroView: View {
                 "cycles": cycles,
                 "auto_start": autoStart ? 1 : 0,
                 "pause_on_end": pauseOnEnd ? 1 : 0,
+                "sound": sound,
+                "vibration": vibration ? 1 : 0,
             ]
             // Vacío = en bucle: se omite "repetitions" para que el servidor
             // lo guarde como null, en vez de forzar un número de vueltas.
