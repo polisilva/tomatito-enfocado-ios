@@ -25,7 +25,7 @@ struct RootTabView: View {
                 .tabItem { Label("Alarmas", systemImage: "alarm") }
                 .tag(2)
 
-            TemporizadoresView()
+            TemporizadoresView(selectedTab: $selectedTab)
                 .tabItem { Label("Temporizadores", systemImage: "hourglass") }
                 .tag(3)
         }

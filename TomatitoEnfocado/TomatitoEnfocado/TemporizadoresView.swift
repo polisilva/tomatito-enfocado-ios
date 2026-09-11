@@ -11,6 +11,7 @@ import SwiftUI
 struct TemporizadoresView: View {
     @EnvironmentObject var session: SessionStore
     @EnvironmentObject var activeTemporizadores: ActiveTemporizadoresStore
+    @Binding var selectedTab: Int
 
     @State private var temporizadores: [Temporizador] = []
     @State private var isLoading = false
@@ -37,7 +38,10 @@ struct TemporizadoresView: View {
                     List {
                         ForEach(temporizadores) { temporizador in
                             Button {
-                                Task { await activeTemporizadores.start(temporizador: temporizador) }
+                                Task {
+                                    await activeTemporizadores.start(temporizador: temporizador)
+                                    selectedTab = 1
+                                }
                             } label: {
                                 HStack {
                                     VStack(alignment: .leading, spacing: 4) {
