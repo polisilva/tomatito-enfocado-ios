@@ -58,6 +58,11 @@ struct Pomodoro: Decodable, Identifiable {
     @FlexibleInt var longBreak: Int
     @FlexibleInt var cycles: Int
     @FlexibleOptionalInt var repetitions: Int?
+    // El GET /pomodoros hace SELECT * — estos campos ya vienen en la respuesta,
+    // solo faltaba decodificarlos para poder precargar el formulario al editar.
+    @FlexibleInt var autoStart: Int = 1
+    @FlexibleInt var pauseOnEnd: Int = 0
+    @FlexibleInt var vibration: Int = 1
     var sound: String?
     var durationLabel: String?
     var lastUsedLabel: String?
