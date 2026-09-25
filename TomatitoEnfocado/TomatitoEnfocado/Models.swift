@@ -77,6 +77,65 @@ struct ActivePomodoroStatus: Decodable {
     var phaseLabel: String
     @FlexibleInt var cycle: Int
     @FlexibleInt var cyclesTotal: Int
+    @FlexibleInt var work: Int
+    @FlexibleInt var shortBreak: Int
+    @FlexibleInt var longBreak: Int
+}
+
+/// Un pomodoro en marcha, tal como lo ve el móvil. Ahora es un elemento de
+/// lista (no un único activo global) porque, igual que en la web, pueden
+/// correr varios pomodoros distintos al mismo tiempo — "20260914": la regla
+/// vieja de "solo uno a la vez" quedó obsoleta cuando la web pasó a permitir
+/// varios en paralelo.
+struct ActivePomodoroItem: Identifiable {
+    let timerId: Int
+    let pomodoroId: Int
+    var name: String
+    var phase: String
+    var totalSeconds: Int
+    var secondsLeft: Int
+    var isPaused: Bool
+    var cycle: Int
+    var cyclesTotal: Int
+    var workMinutes: Int
+    var shortBreakMinutes: Int
+    var longBreakMinutes: Int
+    var isFinished: Bool = false
+    var id: Int { timerId }
+
+    var phaseLabel: String {
+        switch phase {
+        case "work": return "Trabajo"
+        case "short_break": return "Descanso corto"
+        case "long_break": return "Descanso largo"
+        default: return phase
+        }
+    }
+
+    var progress: Double {
+        guard totalSeconds > 0 else { return 0 }
+        return Double(secondsLeft) / Double(totalSeconds)
+    }
+
+    var cycleLabel: String {
+        "\(min(cycle + 1, cyclesTotal))/\(cyclesTotal)"
+    }
+
+    var nextPhaseText: String {
+        switch phase {
+        case "work":
+            let isLastCycle = cycle + 1 >= cyclesTotal
+            let minutes = isLastCycle ? longBreakMinutes : shortBreakMinutes
+            let label = isLastCycle ? "descanso largo" : "descanso corto"
+            return "Siguiente: \(minutes) min \(label)"
+        case "short_break":
+            return "Siguiente: \(workMinutes) min trabajo"
+        case "long_break":
+            return "Siguiente: nueva repetición (\(workMinutes) min trabajo)"
+        default:
+            return ""
+        }
+    }
 }
 
 // MARK: - Cuenta
