@@ -150,8 +150,71 @@ struct ActivePomodoroItem: Identifiable {
 struct CuentaInfo: Decodable {
     var email: String
     var displayName: String
+    var avatarURL: String?
     var omkromConnected: Bool
     var omkromStatusLabel: String
+}
+
+/// Un límite de la licencia Omkrom: puede venir como número, como el texto
+/// "Ilimitados", o no venir (null) si Omkrom no informó esa cuota.
+enum LimitValue: Decodable {
+    case number(Int)
+    case unlimited
+    case unknown
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if container.decodeNil() {
+            self = .unknown
+        } else if let intVal = try? container.decode(Int.self) {
+            self = .number(intVal)
+        } else if let strVal = try? container.decode(String.self) {
+            self = strVal.lowercased().contains("ilimit") ? .unlimited : .unknown
+        } else {
+            self = .unknown
+        }
+    }
+
+    var label: String {
+        switch self {
+        case .number(let n): return "\(n)"
+        case .unlimited: return "Ilimitados"
+        case .unknown: return "—"
+        }
+    }
+}
+
+/// Pantalla "Mi perfil": datos de cuenta + plan Omkrom (GET /mi-perfil).
+struct PerfilInfo: Decodable {
+    var email: String
+    var displayName: String
+    var avatarURL: String?
+    var plan: String
+    var status: String
+    var licenseKey: String
+    var expires: String
+    var pomodorosLimit: LimitValue
+    var temporizadoresLimit: LimitValue
+    var alarmasLimit: LimitValue
+}
+
+/// Una Application Password existente (GET /wp-json/wp/v2/users/me/application-passwords).
+/// WordPress devuelve "created"/"last_used" como fecha ISO8601 (no timestamp).
+struct ApplicationPasswordInfo: Decodable, Identifiable {
+    var uuid: String
+    var name: String
+    var created: String?
+    var lastUsed: String?
+    var id: String { uuid }
+}
+
+/// Respuesta al crear una Application Password nueva — la contraseña en
+/// texto plano solo se devuelve esta vez; WordPress no la vuelve a mostrar.
+struct CreatedApplicationPassword: Decodable, Identifiable {
+    var uuid: String
+    var name: String
+    var password: String
+    var id: String { uuid }
 }
 
 // MARK: - Alarmas

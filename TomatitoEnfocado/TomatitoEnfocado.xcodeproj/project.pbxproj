@@ -25,6 +25,7 @@
 		0DA95A96699385A3AEC5EFD0 /* AlarmaFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 475055A3C29BB8CF89E4947C /* AlarmaFormView.swift */; };
 		E8EDFEDE93F0E282EDB18525 /* TemporizadoresView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC52D00EDF2794354BE3E00E /* TemporizadoresView.swift */; };
 		D7109A2777009DE3FCB705AD /* CreateTemporizadorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD68B8A1DF7BE0800402F480 /* CreateTemporizadorView.swift */; };
+		7B2A96060E879A06381FD9DE /* PerfilView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 365E360C3C6D22C68B877BB9 /* PerfilView.swift */; };
 		E6777C4730494BAA00C4512F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E6777C4630494BAA00C4512F /* Assets.xcassets */; };
 		E6777C4A30494BAA00C4512F /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E6777C4930494BAA00C4512F /* Preview Assets.xcassets */; };
 /* End PBXBuildFile section */
@@ -49,6 +50,7 @@
 		475055A3C29BB8CF89E4947C /* AlarmaFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmaFormView.swift; sourceTree = "<group>"; };
 		FC52D00EDF2794354BE3E00E /* TemporizadoresView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemporizadoresView.swift; sourceTree = "<group>"; };
 		AD68B8A1DF7BE0800402F480 /* CreateTemporizadorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateTemporizadorView.swift; sourceTree = "<group>"; };
+		365E360C3C6D22C68B877BB9 /* PerfilView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerfilView.swift; sourceTree = "<group>"; };
 		E6777C4630494BAA00C4512F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		E6777C4930494BAA00C4512F /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -101,6 +103,7 @@
 				475055A3C29BB8CF89E4947C /* AlarmaFormView.swift */,
 				FC52D00EDF2794354BE3E00E /* TemporizadoresView.swift */,
 				AD68B8A1DF7BE0800402F480 /* CreateTemporizadorView.swift */,
+				365E360C3C6D22C68B877BB9 /* PerfilView.swift */,
 				E6777C4630494BAA00C4512F /* Assets.xcassets */,
 				E6777C4830494BAA00C4512F /* Preview Content */,
 			);
@@ -203,6 +206,7 @@
 				0DA95A96699385A3AEC5EFD0 /* AlarmaFormView.swift in Sources */,
 				E8EDFEDE93F0E282EDB18525 /* TemporizadoresView.swift in Sources */,
 				D7109A2777009DE3FCB705AD /* CreateTemporizadorView.swift in Sources */,
+				7B2A96060E879A06381FD9DE /* PerfilView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

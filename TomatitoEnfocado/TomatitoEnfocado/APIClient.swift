@@ -96,6 +96,76 @@ struct APIClient {
         }
         return json
     }
+
+    // MARK: - Endpoints nativos de WordPress (fuera de /wp-json/tomatito/v1/)
+    //
+    // Usados para gestionar Application Passwords: WordPress ya expone su
+    // propio endpoint para eso (habilitado para este plugin en
+    // 30-habilitar-application-passwords.php), así que no hace falta
+    // duplicar esa lógica en el plugin — solo llamarla con las mismas
+    // credenciales Basic Auth que ya usa el resto del app.
+
+    private func buildAbsoluteRequest(_ absolutePath: String, method: String, body: [String: Any]?) throws -> URLRequest {
+        guard var components = URLComponents(string: baseURL) else { throw APIError.invalidURL }
+        components.path = absolutePath
+        guard let url = components.url else { throw APIError.invalidURL }
+
+        var req = URLRequest(url: url)
+        req.httpMethod = method
+        req.setValue(authHeaderValue, forHTTPHeaderField: "Authorization")
+        req.setValue("application/json", forHTTPHeaderField: "Accept")
+        if let body {
+            req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            req.httpBody = try JSONSerialization.data(withJSONObject: body)
+        }
+        return req
+    }
+
+    /// Llama a un endpoint nativo de WordPress (respuesta "pelada", sin el
+    /// envelope {success,data} propio de /wp-json/tomatito/v1/).
+    func requestWordPress<T: Decodable>(_ absolutePath: String, method: String = "GET", body: [String: Any]? = nil) async throws -> T {
+        let data = try await send(try buildAbsoluteRequest(absolutePath, method: method, body: body))
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        return try decoder.decode(T.self, from: data)
+    }
+
+    func deleteWordPress(_ absolutePath: String) async throws {
+        _ = try await send(try buildAbsoluteRequest(absolutePath, method: "DELETE", body: nil))
+    }
+
+    /// Sube la foto de perfil como multipart/form-data — el único endpoint
+    /// que no habla JSON, así que arma su propia petición en vez de usar
+    /// buildRequest().
+    func uploadAvatar(imageData: Data, filename: String, mimeType: String) async throws -> String {
+        guard var components = URLComponents(string: baseURL) else { throw APIError.invalidURL }
+        components.path = "/wp-json/tomatito/v1/mi-perfil/avatar"
+        guard let url = components.url else { throw APIError.invalidURL }
+
+        var req = URLRequest(url: url)
+        req.httpMethod = "POST"
+        req.setValue(authHeaderValue, forHTTPHeaderField: "Authorization")
+        let boundary = "Boundary-\(UUID().uuidString)"
+        req.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+
+        var body = Data()
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"avatar\"; filename=\"\(filename)\"\r\n".data(using: .utf8)!)
+        body.append("Content-Type: \(mimeType)\r\n\r\n".data(using: .utf8)!)
+        body.append(imageData)
+        body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
+        req.httpBody = body
+
+        let data = try await send(req)
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        struct AvatarPayload: Decodable { var avatarURL: String }
+        let envelope = try decoder.decode(APIEnvelope<AvatarPayload>.self, from: data)
+        guard envelope.success, let payload = envelope.data else {
+            throw APIError.server(envelope.message ?? "No se pudo subir la foto")
+        }
+        return payload.avatarURL
+    }
 }
 
 /// Formato padrão de toda resposta da API: { success, data, message }
