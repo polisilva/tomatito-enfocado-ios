@@ -51,12 +51,30 @@ struct LoginView: View {
                             ProgressView()
                         } else {
                             Text("Entrar")
+                                .font(.headline)
+                                .foregroundStyle(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 4)
                         }
                     }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.red)
                     .disabled(username.isEmpty || appPassword.isEmpty || isLoading)
+                    .listRowInsets(EdgeInsets())
+                }
+                .listRowBackground(Color.clear)
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    HStack(spacing: 4) {
+                        Text("🍅")
+                        Text("Tomatito").fontWeight(.bold).foregroundStyle(.red)
+                        Text("Enfocado").fontWeight(.bold).foregroundStyle(.primary)
+                    }
+                    .font(.title3)
                 }
             }
-            .navigationTitle("🍅 Tomatito Enfocado")
         }
     }
 
