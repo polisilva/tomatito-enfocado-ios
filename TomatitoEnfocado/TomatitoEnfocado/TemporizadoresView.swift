@@ -28,58 +28,82 @@ struct TemporizadoresView: View {
                         Text(errorMessage).foregroundStyle(.red)
                         Button("Reintentar") { Task { await load() } }
                     }
-                } else if temporizadores.isEmpty {
-                    ContentUnavailableView(
-                        "Sin temporizadores",
-                        systemImage: "hourglass",
-                        description: Text("Todavía no has creado ningún temporizador.")
-                    )
                 } else {
                     List {
-                        ForEach(temporizadores) { temporizador in
-                            Button {
-                                Task {
-                                    await activeTemporizadores.start(temporizador: temporizador)
-                                    selectedTab = 1
-                                }
-                            } label: {
-                                HStack {
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text(temporizador.name).font(.headline)
-                                        Text(temporizador.durationLabel ?? "\(temporizador.duration) s")
-                                            .font(.subheadline)
-                                            .foregroundStyle(.secondary)
-                                        if let lastUsed = temporizador.lastUsedLabel {
-                                            Text("Último uso: \(lastUsed)")
-                                                .font(.caption)
-                                                .foregroundStyle(.tertiary)
-                                        }
-                                    }
-                                    Spacer()
-                                    Image(systemName: "play.circle.fill")
-                                        .font(.title2)
-                                        .foregroundStyle(.red)
-                                }
-                                .padding(.vertical, 4)
+                        if temporizadores.isEmpty {
+                            Section {
+                                ContentUnavailableView(
+                                    "Sin temporizadores",
+                                    systemImage: "hourglass",
+                                    description: Text("Todavía no has creado ningún temporizador.")
+                                )
                             }
-                            .buttonStyle(.plain)
-                            .foregroundStyle(.primary)
+                            .listRowInsets(EdgeInsets())
+                        } else {
+                        Section {
+                            ForEach(temporizadores) { temporizador in
+                                Button {
+                                    Task {
+                                        await activeTemporizadores.start(temporizador: temporizador)
+                                        selectedTab = 1
+                                    }
+                                } label: {
+                                    HStack(spacing: 12) {
+                                        ZStack {
+                                            Circle().fill(Color.red.opacity(0.12))
+                                            Image(systemName: "hourglass")
+                                                .font(.system(size: 16))
+                                                .foregroundStyle(.red)
+                                        }
+                                        .frame(width: 36, height: 36)
+
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text(temporizador.name).font(.headline)
+                                            Text(temporizador.durationLabel ?? "\(temporizador.duration) s")
+                                                .font(.subheadline)
+                                                .foregroundStyle(.secondary)
+                                            if let lastUsed = temporizador.lastUsedLabel {
+                                                Text("Último uso: \(lastUsed)")
+                                                    .font(.caption)
+                                                    .foregroundStyle(.tertiary)
+                                            }
+                                        }
+                                        Spacer()
+                                        Image(systemName: "play.circle.fill")
+                                            .font(.title2)
+                                            .foregroundStyle(.red)
+                                    }
+                                    .padding(.vertical, 4)
+                                }
+                                .buttonStyle(.plain)
+                                .foregroundStyle(.primary)
+                            }
+                            .onDelete(perform: delete)
                         }
-                        .onDelete(perform: delete)
+                        }
+
+                        // Botón fijo "+ Nuevo temporizador" — misma especificación
+                        // que "+ Nuevo Pomodoro" en Mi cuenta.
+                        Section {
+                            Button {
+                                showingCreate = true
+                            } label: {
+                                Label("Nuevo temporizador", systemImage: "plus")
+                                    .font(.headline)
+                                    .foregroundStyle(.white)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 4)
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.red)
+                            .listRowInsets(EdgeInsets())
+                        }
+                        .listRowBackground(Color.clear)
                     }
                     .refreshable { await load() }
                 }
             }
             .navigationTitle("Temporizadores")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        showingCreate = true
-                    } label: {
-                        Image(systemName: "plus")
-                    }
-                }
-            }
             .sheet(isPresented: $showingCreate) {
                 CreateTemporizadorView(onCreated: { Task { await load() } })
                     .environmentObject(session)

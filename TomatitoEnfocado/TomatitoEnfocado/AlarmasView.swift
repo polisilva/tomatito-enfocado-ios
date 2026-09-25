@@ -27,66 +27,90 @@ struct AlarmasView: View {
                         Text(errorMessage).foregroundStyle(.red)
                         Button("Reintentar") { Task { await load() } }
                     }
-                } else if alarmas.isEmpty {
-                    ContentUnavailableView(
-                        "Sin alarmas",
-                        systemImage: "alarm",
-                        description: Text("Todavía no has creado ninguna alarma.")
-                    )
                 } else {
                     List {
-                        ForEach(alarmas) { alarma in
-                            HStack {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(alarma.name).font(.headline)
-                                    Text(alarma.timeLabel ?? alarma.time)
-                                        .font(.subheadline)
-                                        .foregroundStyle(.secondary)
-                                    Text(alarma.repeatLabel ?? alarma.repeatMode)
-                                        .font(.caption)
-                                        .foregroundStyle(.tertiary)
-                                }
-                                Spacer()
-                                Toggle("", isOn: Binding(
-                                    get: { alarma.isOn },
-                                    set: { _ in Task { await toggle(alarma) } }
-                                ))
-                                .labelsHidden()
+                        if alarmas.isEmpty {
+                            Section {
+                                ContentUnavailableView(
+                                    "Sin alarmas",
+                                    systemImage: "alarm",
+                                    description: Text("Todavía no has creado ninguna alarma.")
+                                )
                             }
-                            .padding(.vertical, 4)
-                            // Botones explícitos al deslizar la fila — igual
-                            // que Editar/Eliminar en Recordatorios o Mail,
-                            // para no depender de tocar la fila entera.
-                            .swipeActions(edge: .trailing) {
-                                Button(role: .destructive) {
-                                    delete(alarma)
-                                } label: {
-                                    Label("Eliminar", systemImage: "trash")
+                            .listRowInsets(EdgeInsets())
+                        } else {
+                            Section {
+                                ForEach(alarmas) { alarma in
+                                    HStack(spacing: 12) {
+                                        ZStack {
+                                            Circle().fill(Color.red.opacity(0.12))
+                                            Image(systemName: "alarm.fill")
+                                                .font(.system(size: 16))
+                                                .foregroundStyle(.red)
+                                        }
+                                        .frame(width: 36, height: 36)
+
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text(alarma.name).font(.headline)
+                                            Text(alarma.timeLabel ?? alarma.time)
+                                                .font(.subheadline)
+                                                .foregroundStyle(.secondary)
+                                            Text(alarma.repeatLabel ?? alarma.repeatMode)
+                                                .font(.caption)
+                                                .foregroundStyle(.tertiary)
+                                        }
+                                        Spacer()
+                                        Toggle("", isOn: Binding(
+                                            get: { alarma.isOn },
+                                            set: { _ in Task { await toggle(alarma) } }
+                                        ))
+                                        .labelsHidden()
+                                    }
+                                    .padding(.vertical, 4)
+                                    // Botones explícitos al deslizar la fila — igual
+                                    // que Editar/Eliminar en Recordatorios o Mail,
+                                    // para no depender de tocar la fila entera.
+                                    .swipeActions(edge: .trailing) {
+                                        Button(role: .destructive) {
+                                            delete(alarma)
+                                        } label: {
+                                            Label("Eliminar", systemImage: "trash")
+                                        }
+                                    }
+                                    .swipeActions(edge: .leading) {
+                                        Button {
+                                            editingAlarma = alarma
+                                        } label: {
+                                            Label("Editar", systemImage: "pencil")
+                                        }
+                                        .tint(.blue)
+                                    }
                                 }
-                            }
-                            .swipeActions(edge: .leading) {
-                                Button {
-                                    editingAlarma = alarma
-                                } label: {
-                                    Label("Editar", systemImage: "pencil")
-                                }
-                                .tint(.blue)
                             }
                         }
+
+                        // Botón fijo "+ Nueva alarma" — misma especificación que
+                        // "+ Nuevo Pomodoro" en Mi cuenta.
+                        Section {
+                            Button {
+                                showingCreate = true
+                            } label: {
+                                Label("Nueva alarma", systemImage: "plus")
+                                    .font(.headline)
+                                    .foregroundStyle(.white)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 4)
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.red)
+                            .listRowInsets(EdgeInsets())
+                        }
+                        .listRowBackground(Color.clear)
                     }
                     .refreshable { await load() }
                 }
             }
             .navigationTitle("Alarmas")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        showingCreate = true
-                    } label: {
-                        Image(systemName: "plus")
-                    }
-                }
-            }
             .sheet(isPresented: $showingCreate) {
                 AlarmaFormView(existing: nil, onSaved: { Task { await load() } })
                     .environmentObject(session)
