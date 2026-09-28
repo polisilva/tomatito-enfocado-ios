@@ -22,6 +22,7 @@ struct ContentView: View {
     @StateObject private var session = SessionStore()
     @StateObject private var activeTimer = ActiveTimerStore()
     @StateObject private var activeTemporizadores = ActiveTemporizadoresStore()
+    @StateObject private var alarmScheduler = AlarmScheduler()
 
     var body: some View {
         Group {
@@ -34,11 +35,22 @@ struct ContentView: View {
         .environmentObject(session)
         .environmentObject(activeTimer)
         .environmentObject(activeTemporizadores)
+        .environmentObject(alarmScheduler)
         .onAppear {
             configureStores(loggedIn: session.isLoggedIn)
         }
         .onChange(of: session.isLoggedIn) { _, isLoggedIn in
             configureStores(loggedIn: isLoggedIn)
+        }
+        // Vigía de alarmas global: debe poder avisar sin importar qué aba esté abierta.
+        .alert(item: $alarmScheduler.firing) { firing in
+            Alert(
+                title: Text("⏰ \(firing.name)"),
+                message: Text(firing.time),
+                dismissButton: .default(Text("Detener alarma")) {
+                    alarmScheduler.stopFiring()
+                }
+            )
         }
     }
 
@@ -46,6 +58,7 @@ struct ContentView: View {
         let client = loggedIn ? session.client : nil
         activeTimer.configure(client: client)
         activeTemporizadores.configure(client: client)
+        alarmScheduler.configure(client: client)
     }
 }
 

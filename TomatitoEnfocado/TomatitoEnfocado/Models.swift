@@ -105,7 +105,11 @@ struct ActivePomodoroItem: Identifiable {
     var workMinutes: Int
     var shortBreakMinutes: Int
     var longBreakMinutes: Int
+    var sound: String?
     var isFinished: Bool = false
+    /// Evita repetir el sonido en cada tick mientras el usuario no toca
+    /// "Avanzar fase" — se reinicia cada vez que empieza una fase nueva.
+    var hasPlayedFinishSound: Bool = false
     var id: Int { timerId }
 
     var phaseLabel: String {
@@ -282,5 +286,8 @@ struct ActiveTemporizadorItem: Identifiable {
     let name: String
     var secondsLeft: Int
     var isPaused: Bool
+    var sound: String?
+    /// Evita repetir el sonido en cada tick una vez que llegó a 00:00.
+    var hasPlayedFinishSound: Bool = false
     var id: Int { timerId }
 }

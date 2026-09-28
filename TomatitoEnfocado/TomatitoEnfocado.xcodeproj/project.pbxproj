@@ -26,8 +26,11 @@
 		E8EDFEDE93F0E282EDB18525 /* TemporizadoresView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC52D00EDF2794354BE3E00E /* TemporizadoresView.swift */; };
 		D7109A2777009DE3FCB705AD /* CreateTemporizadorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD68B8A1DF7BE0800402F480 /* CreateTemporizadorView.swift */; };
 		7B2A96060E879A06381FD9DE /* PerfilView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 365E360C3C6D22C68B877BB9 /* PerfilView.swift */; };
+		BAAE14A065170DF8F9537FD8 /* SoundPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 966D393EE39699B748646C14 /* SoundPlayer.swift */; };
+		0F3542DAE8872B9284FF36FC /* AlarmScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDB3BF5AF1073E33004161FE /* AlarmScheduler.swift */; };
 		E6777C4730494BAA00C4512F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E6777C4630494BAA00C4512F /* Assets.xcassets */; };
 		E6777C4A30494BAA00C4512F /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E6777C4930494BAA00C4512F /* Preview Assets.xcassets */; };
+		83709CD89B8639C7DBD0260D /* Sounds in Resources */ = {isa = PBXBuildFile; fileRef = 6592930CEC42D5877B074A74 /* Sounds */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -51,8 +54,11 @@
 		FC52D00EDF2794354BE3E00E /* TemporizadoresView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemporizadoresView.swift; sourceTree = "<group>"; };
 		AD68B8A1DF7BE0800402F480 /* CreateTemporizadorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateTemporizadorView.swift; sourceTree = "<group>"; };
 		365E360C3C6D22C68B877BB9 /* PerfilView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerfilView.swift; sourceTree = "<group>"; };
+		966D393EE39699B748646C14 /* SoundPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundPlayer.swift; sourceTree = "<group>"; };
+		FDB3BF5AF1073E33004161FE /* AlarmScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmScheduler.swift; sourceTree = "<group>"; };
 		E6777C4630494BAA00C4512F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		E6777C4930494BAA00C4512F /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		6592930CEC42D5877B074A74 /* Sounds */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Sounds; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -104,6 +110,9 @@
 				FC52D00EDF2794354BE3E00E /* TemporizadoresView.swift */,
 				AD68B8A1DF7BE0800402F480 /* CreateTemporizadorView.swift */,
 				365E360C3C6D22C68B877BB9 /* PerfilView.swift */,
+				966D393EE39699B748646C14 /* SoundPlayer.swift */,
+				FDB3BF5AF1073E33004161FE /* AlarmScheduler.swift */,
+				6592930CEC42D5877B074A74 /* Sounds */,
 				E6777C4630494BAA00C4512F /* Assets.xcassets */,
 				E6777C4830494BAA00C4512F /* Preview Content */,
 			);
@@ -178,6 +187,7 @@
 			files = (
 				E6777C4A30494BAA00C4512F /* Preview Assets.xcassets in Resources */,
 				E6777C4730494BAA00C4512F /* Assets.xcassets in Resources */,
+				83709CD89B8639C7DBD0260D /* Sounds in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -207,6 +217,8 @@
 				E8EDFEDE93F0E282EDB18525 /* TemporizadoresView.swift in Sources */,
 				D7109A2777009DE3FCB705AD /* CreateTemporizadorView.swift in Sources */,
 				7B2A96060E879A06381FD9DE /* PerfilView.swift in Sources */,
+				BAAE14A065170DF8F9537FD8 /* SoundPlayer.swift in Sources */,
+				0F3542DAE8872B9284FF36FC /* AlarmScheduler.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

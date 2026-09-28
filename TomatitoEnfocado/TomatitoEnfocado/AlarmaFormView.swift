@@ -18,6 +18,7 @@ struct AlarmaFormView: View {
     @State private var time: Date = Date()
     @State private var repeatMode: String = "none"
     @State private var days: Set<String> = []
+    @State private var sound: String = "default"
     @State private var isSaving = false
     @State private var errorMessage: String?
 
@@ -26,6 +27,21 @@ struct AlarmaFormView: View {
         ("daily", "Diariamente"),
         ("weekdays", "Lunes a Viernes"),
         ("custom", "Personalizado"),
+    ]
+
+    // El picker de alarmas en la web también ofrece "peeeem" (Alarma
+    // insistente), pero el endpoint de guardado (18-tomatito-api-alarmas.php)
+    // valida el sonido contra una lista que no la incluye — mandarla haría
+    // que el servidor la descarte en silencio y guarde "default" sin avisar.
+    // Se deja afuera acá para no ofrecer una opción que no persiste de verdad.
+    private let soundOptions: [(key: String, label: String)] = [
+        ("default", "Predeterminado"),
+        ("clasico", "Clásico"),
+        ("campana", "Campana"),
+        ("digital", "Digital"),
+        ("suave", "Suave"),
+        ("vibracion", "Solo vibración"),
+        ("silent", "Silencio"),
     ]
 
     private let dayOptions: [(key: String, label: String)] = [
@@ -77,6 +93,14 @@ struct AlarmaFormView: View {
                     }
                 }
 
+                Section("Sonido") {
+                    Picker("Sonido", selection: $sound) {
+                        ForEach(soundOptions, id: \.key) { option in
+                            Text(option.label).tag(option.key)
+                        }
+                    }
+                }
+
                 if let errorMessage {
                     Text(errorMessage)
                         .foregroundStyle(.red)
@@ -109,6 +133,7 @@ struct AlarmaFormView: View {
         guard let existing else { return }
         name = existing.name
         repeatMode = existing.repeatMode
+        sound = existing.sound ?? "default"
         days = Set(dayOptions.map(\.key).filter { key in
             switch key {
             case "mon": return existing.mon != 0
@@ -143,6 +168,7 @@ struct AlarmaFormView: View {
             "time": timeString,
             "repeat_mode": repeatMode,
             "is_active": existing?.isActive ?? 1,
+            "sound": sound,
         ]
         for day in dayOptions {
             body[day.key] = days.contains(day.key) ? 1 : 0

@@ -162,6 +162,7 @@ struct CreatePomodoroView: View {
         ("campana", "Campana"),
         ("digital", "Digital"),
         ("suave", "Suave"),
+        ("vibracion", "Solo vibración"),
         ("silent", "Silencioso"),
     ]
 

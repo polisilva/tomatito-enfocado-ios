@@ -38,8 +38,13 @@ final class ActiveTemporizadoresStore: ObservableObject {
             guard let self else { return }
             Task { @MainActor [self] in
                 for index in self.items.indices {
-                    if !self.items[index].isPaused && self.items[index].secondsLeft > 0 {
+                    guard !self.items[index].isPaused else { continue }
+                    if self.items[index].secondsLeft > 0 {
                         self.items[index].secondsLeft -= 1
+                    }
+                    if self.items[index].secondsLeft == 0 && !self.items[index].hasPlayedFinishSound {
+                        self.items[index].hasPlayedFinishSound = true
+                        SoundPlayer.play(self.items[index].sound, defaultSound: "digital")
                     }
                 }
             }
@@ -53,7 +58,7 @@ final class ActiveTemporizadoresStore: ObservableObject {
             let json = try await client.requestRaw("temporizadores/\(temporizador.id)/start", method: "POST")
             let timerId = intFromAny(json["timer_id"])
             let duration = intFromAny(json["duration"])
-            items.append(ActiveTemporizadorItem(timerId: timerId, name: temporizador.name, secondsLeft: duration, isPaused: false))
+            items.append(ActiveTemporizadorItem(timerId: timerId, name: temporizador.name, secondsLeft: duration, isPaused: false, sound: temporizador.sound))
             ensureTicking()
         } catch {
             errorMessage = error.localizedDescription
@@ -115,13 +120,19 @@ final class ActiveTemporizadoresStore: ObservableObject {
                 items = []
                 return
             }
+            // El dashboard no manda "sound" — se conserva el que ya teníamos
+            // (por timerId) para no perderlo en cada resync.
+            let previousByTimerId = Dictionary(uniqueKeysWithValues: items.map { ($0.timerId, $0) })
             items = response.data.compactMap { entry in
                 guard let timerId = entry.timerId else { return nil }
+                let previous = previousByTimerId[timerId]
                 return ActiveTemporizadorItem(
                     timerId: timerId,
                     name: entry.name,
                     secondsLeft: entry.remaining,
-                    isPaused: entry.state == "paused"
+                    isPaused: entry.state == "paused",
+                    sound: previous?.sound,
+                    hasPlayedFinishSound: previous?.hasPlayedFinishSound ?? false
                 )
             }
             ensureTicking()

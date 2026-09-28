@@ -108,8 +108,13 @@ final class ActiveTimerStore: ObservableObject {
             guard let self else { return }
             Task { @MainActor [self] in
                 for index in self.items.indices {
-                    if !self.items[index].isPaused && !self.items[index].isFinished && self.items[index].secondsLeft > 0 {
+                    guard !self.items[index].isPaused, !self.items[index].isFinished else { continue }
+                    if self.items[index].secondsLeft > 0 {
                         self.items[index].secondsLeft -= 1
+                    }
+                    if self.items[index].secondsLeft == 0 && !self.items[index].hasPlayedFinishSound {
+                        self.items[index].hasPlayedFinishSound = true
+                        SoundPlayer.play(self.items[index].sound, defaultSound: "clasico")
                     }
                 }
             }
@@ -134,8 +139,12 @@ final class ActiveTimerStore: ObservableObject {
         do {
             let active: [ActivePomodoroStatus] = try await client.request("pomodoros/active")
             let finished = items.filter(\.isFinished)
+            // /pomodoros/active no manda "sound" — se conserva el que ya
+            // teníamos (por timerId) para no perderlo en cada resync de 15s.
+            let previousByTimerId = Dictionary(uniqueKeysWithValues: items.map { ($0.timerId, $0) })
             items = active.map { status in
-                ActivePomodoroItem(
+                let previous = previousByTimerId[status.timerId]
+                return ActivePomodoroItem(
                     timerId: status.timerId,
                     pomodoroId: status.pomodoroId,
                     name: status.name,
@@ -147,7 +156,9 @@ final class ActiveTimerStore: ObservableObject {
                     cyclesTotal: max(1, status.cyclesTotal),
                     workMinutes: status.work,
                     shortBreakMinutes: status.shortBreak,
-                    longBreakMinutes: status.longBreak
+                    longBreakMinutes: status.longBreak,
+                    sound: previous?.sound,
+                    hasPlayedFinishSound: previous?.phase == status.phase ? (previous?.hasPlayedFinishSound ?? false) : false
                 )
             } + finished
             if !items.isEmpty { ensureTicking() }
@@ -181,7 +192,8 @@ final class ActiveTimerStore: ObservableObject {
                 cyclesTotal: max(1, pomodoro.cycles),
                 workMinutes: pomodoro.work,
                 shortBreakMinutes: pomodoro.shortBreak,
-                longBreakMinutes: pomodoro.longBreak
+                longBreakMinutes: pomodoro.longBreak,
+                sound: pomodoro.sound
             ))
             ensureTicking()
             syncPrincipalIfNeeded()
@@ -218,7 +230,8 @@ final class ActiveTimerStore: ObservableObject {
                 cyclesTotal: item.cyclesTotal,
                 workMinutes: item.workMinutes,
                 shortBreakMinutes: item.shortBreakMinutes,
-                longBreakMinutes: item.longBreakMinutes
+                longBreakMinutes: item.longBreakMinutes,
+                sound: item.sound
             )
         } catch {
             errorMessage = error.localizedDescription
@@ -279,6 +292,7 @@ final class ActiveTimerStore: ObservableObject {
                 items[index].isPaused = false
                 items[index].cycle = result.cycle ?? items[index].cycle
                 items[index].cyclesTotal = result.cyclesTotal.map { max(1, $0) } ?? items[index].cyclesTotal
+                items[index].hasPlayedFinishSound = false
             }
         } catch {
             errorMessage = error.localizedDescription

@@ -15,8 +15,20 @@ struct CreateTemporizadorView: View {
 
     @State private var name: String = ""
     @State private var minutes: Int = 10
+    @State private var sound: String = "default"
     @State private var isSaving = false
     @State private var errorMessage: String?
+
+    // Mismas opciones que el picker de temporizadores en la web.
+    private let soundOptions: [(key: String, label: String)] = [
+        ("default", "Predeterminado"),
+        ("clasico", "Clásico"),
+        ("campana", "Campana"),
+        ("digital", "Digital"),
+        ("suave", "Suave"),
+        ("vibracion", "Solo vibración"),
+        ("silent", "Silencio"),
+    ]
 
     var body: some View {
         NavigationStack {
@@ -26,6 +38,13 @@ struct CreateTemporizadorView: View {
                 }
                 Section("Duración") {
                     Stepper("\(minutes) min", value: $minutes, in: 1...180)
+                }
+                Section("Sonido") {
+                    Picker("Sonido", selection: $sound) {
+                        ForEach(soundOptions, id: \.key) { option in
+                            Text(option.label).tag(option.key)
+                        }
+                    }
                 }
                 if let errorMessage {
                     Text(errorMessage).foregroundStyle(.red).font(.footnote)
@@ -60,7 +79,7 @@ struct CreateTemporizadorView: View {
             let _: Temporizador = try await session.client.request(
                 "temporizadores",
                 method: "POST",
-                body: ["name": name, "duration": minutes * 60]
+                body: ["name": name, "duration": minutes * 60, "sound": sound]
             )
             onCreated()
             dismiss()
