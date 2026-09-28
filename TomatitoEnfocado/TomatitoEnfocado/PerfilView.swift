@@ -261,18 +261,17 @@ struct PerfilView: View {
         let data: Data
         do {
             guard let loaded = try await item.loadTransferable(type: Data.self) else {
-                avatarErrorMessage = "Lectura: sin datos (loadTransferable devolvió nil)."
+                avatarErrorMessage = "No se pudo leer la imagen elegida."
                 return
             }
             data = loaded
         } catch {
-            let nsError = error as NSError
-            avatarErrorMessage = "Lectura: \(nsError.domain) #\(nsError.code) — \(nsError.localizedDescription)"
+            avatarErrorMessage = "No se pudo leer la imagen elegida."
             return
         }
 
         guard let uiImage = UIImage(data: data), let jpegData = uiImage.jpegData(compressionQuality: 0.85) else {
-            avatarErrorMessage = "Conversión: no se pudo decodificar la imagen (\(data.count) bytes recibidos)."
+            avatarErrorMessage = "No se pudo procesar la imagen elegida."
             return
         }
 
@@ -282,8 +281,7 @@ struct PerfilView: View {
             )
             perfil?.avatarURL = avatarURL
         } catch {
-            let nsError = error as NSError
-            avatarErrorMessage = "Subida: \(nsError.domain) #\(nsError.code) — \(nsError.localizedDescription)"
+            avatarErrorMessage = error.localizedDescription
         }
     }
 }

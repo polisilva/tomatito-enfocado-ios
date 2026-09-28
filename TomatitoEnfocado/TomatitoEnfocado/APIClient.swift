@@ -159,7 +159,11 @@ struct APIClient {
         let data = try await send(req)
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
-        struct AvatarPayload: Decodable { var avatarURL: String }
+        struct AvatarPayload: Decodable {
+            var avatarURL: String
+            // "avatar_url" -> convertFromSnakeCase -> "avatarUrl" (no "avatarURL").
+            enum CodingKeys: String, CodingKey { case avatarURL = "avatarUrl" }
+        }
         let envelope = try decoder.decode(APIEnvelope<AvatarPayload>.self, from: data)
         guard envelope.success, let payload = envelope.data else {
             throw APIError.server(envelope.message ?? "No se pudo subir la foto")

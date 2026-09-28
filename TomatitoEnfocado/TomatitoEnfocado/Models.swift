@@ -153,6 +153,14 @@ struct CuentaInfo: Decodable {
     var avatarURL: String?
     var omkromConnected: Bool
     var omkromStatusLabel: String
+
+    // "avatar_url" con .convertFromSnakeCase da "avatarUrl" (solo la U va en
+    // mayúscula), no "avatarURL" — sin esta CodingKeys explícita, la clave
+    // nunca coincide y el campo queda silenciosamente en nil.
+    enum CodingKeys: String, CodingKey {
+        case email, displayName, omkromConnected, omkromStatusLabel
+        case avatarURL = "avatarUrl"
+    }
 }
 
 /// Un límite de la licencia Omkrom: puede venir como número, como el texto
@@ -196,6 +204,13 @@ struct PerfilInfo: Decodable {
     var pomodorosLimit: LimitValue
     var temporizadoresLimit: LimitValue
     var alarmasLimit: LimitValue
+
+    // Mismo caso que CuentaInfo: "avatar_url" -> convertFromSnakeCase -> "avatarUrl".
+    enum CodingKeys: String, CodingKey {
+        case email, displayName, plan, status, licenseKey, expires
+        case pomodorosLimit, temporizadoresLimit, alarmasLimit
+        case avatarURL = "avatarUrl"
+    }
 }
 
 /// Una Application Password existente (GET /wp-json/wp/v2/users/me/application-passwords).
