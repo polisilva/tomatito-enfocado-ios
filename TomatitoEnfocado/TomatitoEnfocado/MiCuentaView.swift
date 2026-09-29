@@ -96,39 +96,72 @@ struct MiCuentaView: View {
                             .font(.footnote)
                     } else {
                         ForEach(pomodoros) { pomodoro in
-                            Button {
-                                Task {
-                                    await activeTimer.start(pomodoro: pomodoro)
-                                    selectedTab = 1
-                                }
-                            } label: {
-                                HStack(spacing: 12) {
-                                    ZStack {
-                                        Circle().fill(Color.red.opacity(0.12))
-                                        Text("🍅").font(.system(size: 18))
+                            HStack(spacing: 12) {
+                                Button {
+                                    Task {
+                                        await activeTimer.start(pomodoro: pomodoro)
+                                        selectedTab = 1
                                     }
-                                    .frame(width: 36, height: 36)
+                                } label: {
+                                    HStack(spacing: 12) {
+                                        ZStack {
+                                            Circle().fill(Color.red.opacity(0.12))
+                                            Text("🍅").font(.system(size: 18))
+                                        }
+                                        .frame(width: 36, height: 36)
 
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text(pomodoro.name).font(.headline)
-                                        Text("\(pomodoro.work) / \(pomodoro.shortBreak) / \(pomodoro.longBreak) min")
-                                            .font(.subheadline)
-                                            .foregroundStyle(.secondary)
-                                        if let lastUsed = pomodoro.lastUsedLabel {
-                                            Text("Último uso: \(lastUsed)")
-                                                .font(.caption)
-                                                .foregroundStyle(.tertiary)
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text(pomodoro.name).font(.headline)
+                                            Text("\(pomodoro.work) / \(pomodoro.shortBreak) / \(pomodoro.longBreak) min")
+                                                .font(.subheadline)
+                                                .foregroundStyle(.secondary)
+                                            if let lastUsed = pomodoro.lastUsedLabel {
+                                                Text("Último uso: \(lastUsed)")
+                                                    .font(.caption)
+                                                    .foregroundStyle(.tertiary)
+                                            }
                                         }
                                     }
-                                    Spacer()
+                                }
+                                .buttonStyle(.plain)
+                                .foregroundStyle(.primary)
+
+                                Spacer()
+
+                                Button {
+                                    editingPomodoro = pomodoro
+                                } label: {
+                                    Image(systemName: "pencil.circle.fill")
+                                        .font(.title2)
+                                        .foregroundStyle(.blue)
+                                }
+                                .buttonStyle(.plain)
+
+                                Button {
+                                    Task {
+                                        await activeTimer.start(pomodoro: pomodoro)
+                                        selectedTab = 1
+                                    }
+                                } label: {
                                     Image(systemName: "play.circle.fill")
                                         .font(.title2)
                                         .foregroundStyle(.red)
                                 }
-                                .padding(.vertical, 4)
+                                .buttonStyle(.plain)
                             }
-                            .buttonStyle(.plain)
-                            .foregroundStyle(.primary)
+                            .padding(.vertical, 4)
+                            .contextMenu {
+                                Button {
+                                    editingPomodoro = pomodoro
+                                } label: {
+                                    Label("Editar", systemImage: "pencil")
+                                }
+                                Button(role: .destructive) {
+                                    delete(pomodoro)
+                                } label: {
+                                    Label("Eliminar", systemImage: "trash")
+                                }
+                            }
                             .swipeActions(edge: .leading) {
                                 Button {
                                     editingPomodoro = pomodoro
@@ -250,6 +283,13 @@ struct MiCuentaView: View {
             for id in idsToDelete {
                 try? await session.client.requestRaw("pomodoros/\(id)", method: "DELETE")
             }
+        }
+    }
+
+    private func delete(_ pomodoro: Pomodoro) {
+        pomodoros.removeAll { $0.id == pomodoro.id }
+        Task {
+            try? await session.client.requestRaw("pomodoros/\(pomodoro.id)", method: "DELETE")
         }
     }
 }
