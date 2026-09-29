@@ -85,6 +85,8 @@ struct ActivePomodoroStatus: Decodable {
     @FlexibleInt var work: Int
     @FlexibleInt var shortBreak: Int
     @FlexibleInt var longBreak: Int
+    @FlexibleInt var autoStart: Int = 1
+    @FlexibleInt var pauseOnEnd: Int = 0
 }
 
 /// Un pomodoro en marcha, tal como lo ve el móvil. Ahora es un elemento de
@@ -106,6 +108,11 @@ struct ActivePomodoroItem: Identifiable {
     var shortBreakMinutes: Int
     var longBreakMinutes: Int
     var sound: String?
+    /// Si el pomodoro tiene auto_start=1 y pause_on_end=0, la fase avanza
+    /// sola al llegar a cero (igual que en la web) — si no, hay que tocar
+    /// "Avanzar fase" a mano.
+    var autoStart: Bool = false
+    var pauseOnEnd: Bool = true
     var isFinished: Bool = false
     /// Evita repetir el sonido en cada tick mientras el usuario no toca
     /// "Avanzar fase" — se reinicia cada vez que empieza una fase nueva.

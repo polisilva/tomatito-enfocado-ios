@@ -309,10 +309,22 @@ struct ActivePomodoroCard: View {
                 }
 
                 if item.secondsLeft <= 0 {
-                    Button("Avanzar fase") {
-                        Task { await activeTimer.advancePhase(item) }
+                    if item.autoStart && !item.pauseOnEnd {
+                        // Igual que en la web: con auto_start=1 y pause_on_end=0
+                        // la fase avanza sola (ya disparada por el ticker) — no
+                        // se muestra el botón para no duplicar el avance.
+                        HStack(spacing: 6) {
+                            ProgressView()
+                            Text("Avanzando de fase...")
+                        }
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                    } else {
+                        Button("Avanzar fase") {
+                            Task { await activeTimer.advancePhase(item) }
+                        }
+                        .buttonStyle(.borderedProminent)
                     }
-                    .buttonStyle(.borderedProminent)
                 } else {
                     HStack(spacing: 16) {
                         Button(item.isPaused ? "Reanudar" : "Pausar") {

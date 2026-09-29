@@ -115,6 +115,12 @@ final class ActiveTimerStore: ObservableObject {
                     if self.items[index].secondsLeft == 0 && !self.items[index].hasPlayedFinishSound {
                         self.items[index].hasPlayedFinishSound = true
                         SoundPlayer.play(self.items[index].sound, defaultSound: "clasico")
+                        // Igual que en la web: con auto_start=1 y pause_on_end=0
+                        // la fase avanza sola, sin esperar el toque en "Avanzar fase".
+                        if self.items[index].autoStart && !self.items[index].pauseOnEnd {
+                            let itemToAdvance = self.items[index]
+                            Task { await self.advancePhase(itemToAdvance) }
+                        }
                     }
                 }
             }
@@ -158,6 +164,8 @@ final class ActiveTimerStore: ObservableObject {
                     shortBreakMinutes: status.shortBreak,
                     longBreakMinutes: status.longBreak,
                     sound: previous?.sound,
+                    autoStart: status.autoStart != 0,
+                    pauseOnEnd: status.pauseOnEnd != 0,
                     hasPlayedFinishSound: previous?.phase == status.phase ? (previous?.hasPlayedFinishSound ?? false) : false
                 )
             } + finished
@@ -193,7 +201,9 @@ final class ActiveTimerStore: ObservableObject {
                 workMinutes: pomodoro.work,
                 shortBreakMinutes: pomodoro.shortBreak,
                 longBreakMinutes: pomodoro.longBreak,
-                sound: pomodoro.sound
+                sound: pomodoro.sound,
+                autoStart: pomodoro.autoStart != 0,
+                pauseOnEnd: pomodoro.pauseOnEnd != 0
             ))
             ensureTicking()
             syncPrincipalIfNeeded()
@@ -231,7 +241,9 @@ final class ActiveTimerStore: ObservableObject {
                 workMinutes: item.workMinutes,
                 shortBreakMinutes: item.shortBreakMinutes,
                 longBreakMinutes: item.longBreakMinutes,
-                sound: item.sound
+                sound: item.sound,
+                autoStart: item.autoStart,
+                pauseOnEnd: item.pauseOnEnd
             )
         } catch {
             errorMessage = error.localizedDescription
