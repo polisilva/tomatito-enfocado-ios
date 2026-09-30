@@ -135,8 +135,11 @@ struct CreatePomodoroView: View {
     @State private var cycles: Int = 4
     @State private var repetitionsText: String = ""
     @State private var showingAdvanced = false
-    @State private var autoStart = false
-    @State private var pauseOnEnd = true
+    // Mismo default que usa el backend cuando estos campos no se mandan
+    // (11-tomatito-api-pomodoros.php: auto_start ?? 1, pause_on_end ?? 0) —
+    // que la fase avance sola es lo esperado, no la excepción.
+    @State private var autoStart = true
+    @State private var pauseOnEnd = false
     @State private var sound: String = "default"
     @State private var vibration = true
     @State private var isSaving = false
