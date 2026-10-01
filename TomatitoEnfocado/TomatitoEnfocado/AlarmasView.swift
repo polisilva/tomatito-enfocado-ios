@@ -60,6 +60,14 @@ struct AlarmasView: View {
                                                 .foregroundStyle(.tertiary)
                                         }
                                         Spacer()
+                                        Button {
+                                            editingAlarma = alarma
+                                        } label: {
+                                            Image(systemName: "pencil.circle.fill")
+                                                .font(.title2)
+                                                .foregroundStyle(.blue)
+                                        }
+                                        .buttonStyle(.plain)
                                         Toggle("", isOn: Binding(
                                             get: { alarma.isOn },
                                             set: { _ in Task { await toggle(alarma) } }
@@ -67,6 +75,18 @@ struct AlarmasView: View {
                                         .labelsHidden()
                                     }
                                     .padding(.vertical, 4)
+                                    .contextMenu {
+                                        Button {
+                                            editingAlarma = alarma
+                                        } label: {
+                                            Label("Editar", systemImage: "pencil")
+                                        }
+                                        Button(role: .destructive) {
+                                            delete(alarma)
+                                        } label: {
+                                            Label("Eliminar", systemImage: "trash")
+                                        }
+                                    }
                                     // Botones explícitos al deslizar la fila — igual
                                     // que Editar/Eliminar en Recordatorios o Mail,
                                     // para no depender de tocar la fila entera.
