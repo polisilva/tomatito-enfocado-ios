@@ -17,6 +17,7 @@ struct TemporizadoresView: View {
     @State private var isLoading = false
     @State private var errorMessage: String?
     @State private var showingCreate = false
+    @State private var editingTemporizador: Temporizador?
 
     var body: some View {
         NavigationStack {
@@ -42,41 +43,82 @@ struct TemporizadoresView: View {
                         } else {
                         Section {
                             ForEach(temporizadores) { temporizador in
-                                Button {
-                                    Task {
-                                        await activeTemporizadores.start(temporizador: temporizador)
-                                        selectedTab = 1
-                                    }
-                                } label: {
-                                    HStack(spacing: 12) {
-                                        ZStack {
-                                            Circle().fill(Color.red.opacity(0.12))
-                                            Image(systemName: "hourglass")
-                                                .font(.system(size: 16))
-                                                .foregroundStyle(.red)
+                                HStack(spacing: 12) {
+                                    Button {
+                                        Task {
+                                            await activeTemporizadores.start(temporizador: temporizador)
+                                            selectedTab = 1
                                         }
-                                        .frame(width: 36, height: 36)
+                                    } label: {
+                                        HStack(spacing: 12) {
+                                            ZStack {
+                                                Circle().fill(Color.red.opacity(0.12))
+                                                Image(systemName: "hourglass")
+                                                    .font(.system(size: 16))
+                                                    .foregroundStyle(.red)
+                                            }
+                                            .frame(width: 36, height: 36)
 
-                                        VStack(alignment: .leading, spacing: 4) {
-                                            Text(temporizador.name).font(.headline)
-                                            Text(temporizador.durationLabel ?? "\(temporizador.duration) s")
-                                                .font(.subheadline)
-                                                .foregroundStyle(.secondary)
-                                            if let lastUsed = temporizador.lastUsedLabel {
-                                                Text("Último uso: \(lastUsed)")
-                                                    .font(.caption)
-                                                    .foregroundStyle(.tertiary)
+                                            VStack(alignment: .leading, spacing: 4) {
+                                                Text(temporizador.name).font(.headline)
+                                                Text(temporizador.durationLabel ?? "\(temporizador.duration) s")
+                                                    .font(.subheadline)
+                                                    .foregroundStyle(.secondary)
+                                                if let lastUsed = temporizador.lastUsedLabel {
+                                                    Text("Último uso: \(lastUsed)")
+                                                        .font(.caption)
+                                                        .foregroundStyle(.tertiary)
+                                                }
                                             }
                                         }
-                                        Spacer()
+                                    }
+                                    .buttonStyle(.plain)
+                                    .foregroundStyle(.primary)
+
+                                    Spacer()
+
+                                    Button {
+                                        editingTemporizador = temporizador
+                                    } label: {
+                                        Image(systemName: "pencil.circle.fill")
+                                            .font(.title2)
+                                            .foregroundStyle(.blue)
+                                    }
+                                    .buttonStyle(.plain)
+
+                                    Button {
+                                        Task {
+                                            await activeTemporizadores.start(temporizador: temporizador)
+                                            selectedTab = 1
+                                        }
+                                    } label: {
                                         Image(systemName: "play.circle.fill")
                                             .font(.title2)
                                             .foregroundStyle(.red)
                                     }
-                                    .padding(.vertical, 4)
+                                    .buttonStyle(.plain)
                                 }
-                                .buttonStyle(.plain)
-                                .foregroundStyle(.primary)
+                                .padding(.vertical, 4)
+                                .contextMenu {
+                                    Button {
+                                        editingTemporizador = temporizador
+                                    } label: {
+                                        Label("Editar", systemImage: "pencil")
+                                    }
+                                    Button(role: .destructive) {
+                                        delete(temporizador)
+                                    } label: {
+                                        Label("Eliminar", systemImage: "trash")
+                                    }
+                                }
+                                .swipeActions(edge: .leading) {
+                                    Button {
+                                        editingTemporizador = temporizador
+                                    } label: {
+                                        Label("Editar", systemImage: "pencil")
+                                    }
+                                    .tint(.blue)
+                                }
                             }
                             .onDelete(perform: delete)
                         }
@@ -108,6 +150,10 @@ struct TemporizadoresView: View {
                 CreateTemporizadorView(onCreated: { Task { await load() } })
                     .environmentObject(session)
             }
+            .sheet(item: $editingTemporizador) { temporizador in
+                CreateTemporizadorView(existing: temporizador, onCreated: { Task { await load() } })
+                    .environmentObject(session)
+            }
         }
         .task { await load() }
     }
@@ -130,6 +176,13 @@ struct TemporizadoresView: View {
             for id in idsToDelete {
                 try? await session.client.requestRaw("temporizadores/\(id)", method: "DELETE")
             }
+        }
+    }
+
+    private func delete(_ temporizador: Temporizador) {
+        temporizadores.removeAll { $0.id == temporizador.id }
+        Task {
+            try? await session.client.requestRaw("temporizadores/\(temporizador.id)", method: "DELETE")
         }
     }
 }

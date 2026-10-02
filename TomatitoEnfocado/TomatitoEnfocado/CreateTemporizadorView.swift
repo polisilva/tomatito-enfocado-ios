@@ -11,6 +11,7 @@ struct CreateTemporizadorView: View {
     @EnvironmentObject var session: SessionStore
     @Environment(\.dismiss) private var dismiss
 
+    var existing: Temporizador?
     var onCreated: () -> Void
 
     @State private var name: String = ""
@@ -50,7 +51,7 @@ struct CreateTemporizadorView: View {
                     Text(errorMessage).foregroundStyle(.red).font(.footnote)
                 }
             }
-            .navigationTitle("Nuevo temporizador")
+            .navigationTitle(existing == nil ? "Nuevo temporizador" : "Editar temporizador")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancelar") { dismiss() }
@@ -69,18 +70,31 @@ struct CreateTemporizadorView: View {
                 }
             }
         }
+        .onAppear { populateFromExisting() }
+    }
+
+    private func populateFromExisting() {
+        guard let existing else { return }
+        name = existing.name
+        minutes = max(1, min(180, existing.duration / 60))
+        sound = existing.sound ?? "default"
     }
 
     private func save() async {
         errorMessage = nil
         isSaving = true
         defer { isSaving = false }
+        let body: [String: Any] = ["name": name, "duration": minutes * 60, "sound": sound]
         do {
-            let _: Temporizador = try await session.client.request(
-                "temporizadores",
-                method: "POST",
-                body: ["name": name, "duration": minutes * 60, "sound": sound]
-            )
+            if let existing {
+                let _: Temporizador = try await session.client.request(
+                    "temporizadores/\(existing.id)", method: "PUT", body: body
+                )
+            } else {
+                let _: Temporizador = try await session.client.request(
+                    "temporizadores", method: "POST", body: body
+                )
+            }
             onCreated()
             dismiss()
         } catch {
