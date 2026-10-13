@@ -149,6 +149,7 @@ struct AlarmasView: View {
         defer { isLoading = false }
         do {
             alarmas = try await session.client.request("alarmas")
+            NotificationManager.shared.syncAlarmas(alarmas)
         } catch {
             errorMessage = error.localizedDescription
         }

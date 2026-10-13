@@ -26,6 +26,7 @@ final class AlarmScheduler: ObservableObject {
 
     private var client: APIClient?
     private var timer: Timer?
+    private var ticks = 0
     /// Próximo recordatorio permitido por clave "id_fecha_hora" (misma
     /// clave que usa la web para no repetir antes de tiempo).
     private var nextReminderAt: [String: Date] = [:]
@@ -34,9 +35,11 @@ final class AlarmScheduler: ObservableObject {
 
     func configure(client: APIClient?) {
         self.client = client
+        SoundPlayer.stopAlarm()
         timer?.invalidate()
         timer = nil
         firing = nil
+        ticks = 0
         nextReminderAt = [:]
         stopped = []
         if client != nil {
@@ -46,6 +49,7 @@ final class AlarmScheduler: ObservableObject {
 
     func stopFiring() {
         guard let firing else { return }
+        SoundPlayer.stopAlarm()
         stopped.insert(firing.key)
         nextReminderAt.removeValue(forKey: firing.key)
         self.firing = nil
@@ -55,9 +59,27 @@ final class AlarmScheduler: ObservableObject {
         guard timer == nil else { return }
         timer = Timer.scheduledTimer(withTimeInterval: 20, repeats: true) { [weak self] _ in
             guard let self else { return }
-            Task { @MainActor [self] in await self.check() }
+            Task { @MainActor [self] in
+                await self.check()
+                // Cada ~5 min se refrescan los avisos programados, por si se
+                // creó o cambió una alarma desde la web.
+                self.ticks += 1
+                if self.ticks % 15 == 0 { await self.syncNotifications() }
+            }
         }
-        Task { await check() }
+        Task {
+            await check()
+            await syncNotifications()
+        }
+    }
+
+    /// Reprograma los avisos locales de todas las alarmas activas, para que
+    /// suenen aunque el app esté cerrado.
+    func syncNotifications() async {
+        guard let client else { return }
+        if let alarmas: [Alarma] = try? await client.request("alarmas") {
+            NotificationManager.shared.syncAlarmas(alarmas)
+        }
     }
 
     private func check() async {
@@ -88,7 +110,7 @@ final class AlarmScheduler: ObservableObject {
 
                 let reminderMinutes = max(1, alarma.reminderMinutes ?? 5)
                 nextReminderAt[key] = now.addingTimeInterval(TimeInterval(reminderMinutes * 60))
-                SoundPlayer.play(alarma.sound, defaultSound: "campana")
+                SoundPlayer.playAlarm(alarma.sound)
                 firing = FiringAlarm(key: key, name: alarma.name, time: alarma.time)
             }
         } catch {

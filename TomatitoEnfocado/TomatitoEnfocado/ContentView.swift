@@ -56,6 +56,12 @@ struct ContentView: View {
 
     private func configureStores(loggedIn: Bool) {
         let client = loggedIn ? session.client : nil
+        if loggedIn {
+            NotificationManager.shared.requestAuthorization()
+        } else {
+            // Al cerrar sesión no deben seguir llegando avisos de la cuenta anterior.
+            NotificationManager.shared.cancelAll(prefix: "")
+        }
         activeTimer.configure(client: client)
         activeTemporizadores.configure(client: client)
         alarmScheduler.configure(client: client)

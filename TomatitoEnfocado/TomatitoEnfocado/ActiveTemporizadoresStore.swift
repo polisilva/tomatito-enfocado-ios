@@ -22,6 +22,15 @@ final class ActiveTemporizadoresStore: ObservableObject {
             ticker?.invalidate()
             ticker = nil
             items = []
+            NotificationManager.shared.cancelAll(prefix: "temporizador-")
+        }
+    }
+
+    private func syncNotification(_ item: ActiveTemporizadorItem) {
+        if item.isPaused || item.secondsLeft <= 0 {
+            NotificationManager.shared.cancel(ids: ["temporizador-\(item.timerId)"])
+        } else {
+            NotificationManager.shared.scheduleTemporizador(item)
         }
     }
 
@@ -58,7 +67,9 @@ final class ActiveTemporizadoresStore: ObservableObject {
             let json = try await client.requestRaw("temporizadores/\(temporizador.id)/start", method: "POST")
             let timerId = intFromAny(json["timer_id"])
             let duration = intFromAny(json["duration"])
-            items.append(ActiveTemporizadorItem(timerId: timerId, name: temporizador.name, secondsLeft: duration, isPaused: false, sound: temporizador.sound))
+            let newItem = ActiveTemporizadorItem(timerId: timerId, name: temporizador.name, secondsLeft: duration, isPaused: false, sound: temporizador.sound)
+            items.append(newItem)
+            syncNotification(newItem)
             ensureTicking()
         } catch {
             errorMessage = error.localizedDescription
@@ -78,6 +89,7 @@ final class ActiveTemporizadoresStore: ObservableObject {
                 items[index].secondsLeft = intFromAny(json["time_left"])
                 items[index].isPaused = true
             }
+            syncNotification(items[index])
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -89,6 +101,7 @@ final class ActiveTemporizadoresStore: ObservableObject {
         do {
             try await client.requestRaw("temporizadores/\(item.timerId)/stop", method: "POST")
             items.removeAll { $0.timerId == item.timerId }
+            NotificationManager.shared.cancel(ids: ["temporizador-\(item.timerId)"])
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -118,6 +131,7 @@ final class ActiveTemporizadoresStore: ObservableObject {
 
             guard response.mode == "running" else {
                 items = []
+                NotificationManager.shared.cancelAll(prefix: "temporizador-")
                 return
             }
             // El dashboard no manda "sound" — se conserva el que ya teníamos
@@ -135,6 +149,9 @@ final class ActiveTemporizadoresStore: ObservableObject {
                     hasPlayedFinishSound: previous?.hasPlayedFinishSound ?? false
                 )
             }
+            let removed = Set(previousByTimerId.keys).subtracting(items.map(\.timerId))
+            NotificationManager.shared.cancel(ids: removed.map { "temporizador-\($0)" })
+            items.forEach(syncNotification)
             ensureTicking()
         } catch {
             // Silencioso: corrección de fondo, no debe interrumpir la UI.

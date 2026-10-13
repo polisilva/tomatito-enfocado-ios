@@ -57,6 +57,7 @@ final class ActiveTimerStore: ObservableObject {
         items = []
         principalPomodoroId = nil
         errorMessage = nil
+        NotificationManager.shared.cancelAll(prefix: "pomodoro-")
     }
 
     /// Marca `pomodoroId` como principal — se refleja de inmediato en el
@@ -92,6 +93,16 @@ final class ActiveTimerStore: ObservableObject {
             Task { await setPrincipal(pomodoroId: onlyId) }
         } else if let pid = principalPomodoroId, !items.contains(where: { $0.pomodoroId == pid }) {
             principalPomodoroId = nil
+        }
+    }
+
+    /// Programa (o cancela) el aviso de fin de fase de este pomodoro, para
+    /// que llegue aunque el app esté en segundo plano.
+    private func syncNotification(_ item: ActivePomodoroItem) {
+        if item.isPaused || item.isFinished || item.secondsLeft <= 0 {
+            NotificationManager.shared.cancel(ids: ["pomodoro-\(item.timerId)"])
+        } else {
+            NotificationManager.shared.schedulePomodoro(item)
         }
     }
 
@@ -169,6 +180,9 @@ final class ActiveTimerStore: ObservableObject {
                     hasPlayedFinishSound: previous?.phase == status.phase ? (previous?.hasPlayedFinishSound ?? false) : false
                 )
             } + finished
+            let removed = Set(previousByTimerId.keys).subtracting(items.map(\.timerId))
+            NotificationManager.shared.cancel(ids: removed.map { "pomodoro-\($0)" })
+            items.forEach(syncNotification)
             if !items.isEmpty { ensureTicking() }
             syncPrincipalIfNeeded()
         } catch {
@@ -205,6 +219,7 @@ final class ActiveTimerStore: ObservableObject {
                 autoStart: pomodoro.autoStart != 0,
                 pauseOnEnd: pomodoro.pauseOnEnd != 0
             ))
+            if let started = items.last { syncNotification(started) }
             ensureTicking()
             syncPrincipalIfNeeded()
         } catch {
@@ -245,6 +260,8 @@ final class ActiveTimerStore: ObservableObject {
                 autoStart: item.autoStart,
                 pauseOnEnd: item.pauseOnEnd
             )
+            NotificationManager.shared.cancel(ids: ["pomodoro-\(item.timerId)"])
+            syncNotification(items[index])
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -263,6 +280,7 @@ final class ActiveTimerStore: ObservableObject {
                 items[index].secondsLeft = intFromAny(json["time_left"])
                 items[index].isPaused = true
             }
+            syncNotification(items[index])
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -274,6 +292,7 @@ final class ActiveTimerStore: ObservableObject {
         do {
             try await client.requestRaw("pomodoros/\(item.pomodoroId)/stop", method: "POST")
             items.removeAll { $0.timerId == item.timerId }
+            NotificationManager.shared.cancel(ids: ["pomodoro-\(item.timerId)"])
             syncPrincipalIfNeeded()
         } catch {
             errorMessage = error.localizedDescription
@@ -297,6 +316,7 @@ final class ActiveTimerStore: ObservableObject {
             if result.isFinal {
                 try? await client.requestRaw("complete?timer_id=\(item.timerId)", method: "POST")
                 items[index].isFinished = true
+                NotificationManager.shared.cancel(ids: ["pomodoro-\(item.timerId)"])
             } else {
                 items[index].phase = result.phase ?? items[index].phase
                 items[index].totalSeconds = result.duration ?? items[index].totalSeconds
@@ -305,6 +325,7 @@ final class ActiveTimerStore: ObservableObject {
                 items[index].cycle = result.cycle ?? items[index].cycle
                 items[index].cyclesTotal = result.cyclesTotal.map { max(1, $0) } ?? items[index].cyclesTotal
                 items[index].hasPlayedFinishSound = false
+                syncNotification(items[index])
             }
         } catch {
             errorMessage = error.localizedDescription
