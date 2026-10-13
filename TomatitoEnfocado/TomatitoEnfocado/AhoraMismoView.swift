@@ -36,6 +36,7 @@ struct AhoraMismoView: View {
     @EnvironmentObject var activeTemporizadores: ActiveTemporizadoresStore
 
     @State private var upcomingAlarmas: [UpcomingAlarma] = []
+    @State private var historial: [SesionHistorial] = []
 
     var body: some View {
         NavigationStack {
@@ -159,6 +160,47 @@ struct AhoraMismoView: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal)
+
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack {
+                            Text("Historial de hoy").font(.headline)
+                            Spacer()
+                            NavigationLink("Ver todo") {
+                                HistorialView()
+                            }
+                            .font(.subheadline)
+                        }
+                        VStack(spacing: 0) {
+                            if historial.isEmpty {
+                                Text("Ningún pomodoro hoy.")
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding()
+                            } else {
+                                ForEach(Array(historial.enumerated()), id: \.element.id) { index, sesion in
+                                    if index > 0 { Divider().padding(.leading) }
+                                    HStack {
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text(sesion.name).font(.subheadline)
+                                            Text("\(sesion.timeLabel) · \(sesion.durationLabel)")
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                        }
+                                        Spacer()
+                                        Text(sesion.stateLabel)
+                                            .font(.caption2.weight(.semibold))
+                                            .foregroundStyle(historialColor(sesion.state))
+                                    }
+                                    .padding()
+                                }
+                            }
+                        }
+                        .background(Color(.secondarySystemGroupedBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal)
                 }
                 .padding(.top, 8)
                 .padding(.bottom, 48)
@@ -166,12 +208,35 @@ struct AhoraMismoView: View {
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Ahora mismo")
             .task { await loadUpcomingAlarmas() }
+            .task { await loadHistorial() }
             .task { await resyncLoop() }
+            // Al detener o terminar un pomodoro el servidor crea la sesión del
+            // historial: se recarga para que aparezca sin esperar un refresh manual.
+            .onChange(of: activeTimer.items.count) { _, _ in Task { await loadHistorial() } }
+            .onChange(of: activeTimer.items.filter(\.isFinished).count) { _, _ in Task { await loadHistorial() } }
             .refreshable {
                 await loadUpcomingAlarmas()
+                await loadHistorial()
                 await activeTimer.resyncFromServer()
                 await activeTemporizadores.resyncFromServer()
             }
+        }
+    }
+
+    private func historialColor(_ state: String) -> Color {
+        switch state {
+        case "completed": return .green
+        case "cancelled": return .red
+        default: return .orange
+        }
+    }
+
+    private func loadHistorial() async {
+        do {
+            let page: HistorialPage = try await session.client.requestFull("history-sesiones?per_page=4")
+            historial = page.data
+        } catch {
+            // Silencioso: esta sección es solo un preview, no bloquea la pantalla.
         }
     }
 

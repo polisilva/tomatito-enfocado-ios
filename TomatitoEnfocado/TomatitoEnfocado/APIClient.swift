@@ -83,6 +83,17 @@ struct APIClient {
         return payload
     }
 
+    /// Para respuestas que traen más que "data" (resumen, paginación): decodifica
+    /// el cuerpo completo en T, sin el envelope {success,data}.
+    func requestFull<T: Decodable>(_ path: String) async throws -> T {
+        var req = try buildRequest(path, method: "GET", body: nil)
+        req.cachePolicy = .reloadIgnoringLocalCacheData
+        let data = try await send(req)
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        return try decoder.decode(T.self, from: data)
+    }
+
     /// Para endpoints cuja resposta vem "solta" junto a "success" (sem "data"):
     /// pause/resume/stop/complete/delete. Devolve o JSON cru.
     @discardableResult

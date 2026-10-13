@@ -48,6 +48,16 @@ struct FlexibleOptionalInt: Decodable {
     }
 }
 
+extension KeyedDecodingContainer {
+    /// Con un property wrapper la clave es obligatoria aunque el valor sea
+    /// opcional: sin esto, una respuesta que omite el campo (p.ej.
+    /// advance-phase cuando is_final=true no manda duration/cycle) falla con
+    /// "The data couldn't be read because it is missing".
+    func decode(_ type: FlexibleOptionalInt.Type, forKey key: Key) throws -> FlexibleOptionalInt {
+        try decodeIfPresent(type, forKey: key) ?? FlexibleOptionalInt(wrappedValue: nil)
+    }
+}
+
 // MARK: - Pomodoros
 
 struct Pomodoro: Decodable, Identifiable {
@@ -152,6 +162,77 @@ struct ActivePomodoroItem: Identifiable {
             return ""
         }
     }
+}
+
+// MARK: - Historial
+
+/// Una sesión del historial (GET /history-sesiones) — pomodoros/temporizadores
+/// ya terminados, cancelados o pausados. Mismo endpoint que usa la tabla de
+/// historial en el dashboard web; sin parámetros de fecha, el servidor
+/// devuelve las de hoy.
+struct SesionHistorial: Decodable, Identifiable {
+    @FlexibleInt var id: Int
+    var name: String
+    @FlexibleInt var duration: Int
+    var state: String
+    var startedAt: String
+    var proyectoName: String?
+    var tipoName: String?
+    var dispositivoName: String?
+
+    var stateLabel: String {
+        switch state {
+        case "completed": return "Completado"
+        case "cancelled": return "Cancelado"
+        case "paused": return "Pausado"
+        default: return state.capitalized
+        }
+    }
+
+    /// Igual que la web: Math.round(duration / 60).
+    var durationLabel: String {
+        "\(max(0, duration + 30) / 60) min"
+    }
+
+    /// "Proyecto · Tipo", si la sesión los tiene (la web los añade al nombre).
+    var detailLabel: String? {
+        let parts = [proyectoName, tipoName].compactMap { $0 }.filter { !$0.isEmpty }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    }
+
+    // "started_at" viene como "YYYY-MM-DD HH:MM:SS" (post_date de WP, ya en
+    // hora local del sitio) — se parte como texto para no desplazar husos.
+    var timeLabel: String {
+        let parts = startedAt.split(separator: " ")
+        guard parts.count == 2 else { return startedAt }
+        return String(parts[1].prefix(5))
+    }
+
+    var dateLabel: String {
+        let day = (startedAt.split(separator: " ").first ?? "").split(separator: "-")
+        guard day.count == 3 else { return startedAt }
+        return "\(day[2])/\(day[1])"
+    }
+}
+
+struct HistorialResumen: Decodable {
+    @FlexibleInt var completadas: Int
+    @FlexibleInt var minutos: Int
+}
+
+struct HistorialPaginacion: Decodable {
+    @FlexibleInt var page: Int
+    @FlexibleInt var perPage: Int
+    @FlexibleInt var total: Int
+    @FlexibleInt var totalPages: Int
+}
+
+/// Respuesta completa de GET /history-sesiones: además de "data" trae el
+/// resumen del período y la paginación, así que no pasa por APIEnvelope.
+struct HistorialPage: Decodable {
+    var data: [SesionHistorial]
+    var summary: HistorialResumen
+    var pagination: HistorialPaginacion
 }
 
 // MARK: - Cuenta
