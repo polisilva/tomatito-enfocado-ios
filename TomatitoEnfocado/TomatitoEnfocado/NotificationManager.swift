@@ -8,9 +8,8 @@
 //  para la hora exacta en que terminan (como cualquier app de temporizador).
 //
 //  Con el app abierto el sonido lo reproduce SoundPlayer; el banner se
-//  muestra igual, pero sin sonido propio para no duplicarlo. Las alarmas se
-//  excluyen del banner en primer plano porque ya tienen su propio aviso
-//  "Detener alarma" (AlarmScheduler).
+//  muestra igual, pero sin sonido propio para no duplicarlo. Las alarmas
+//  además tienen su aviso "Detener alarma" dentro del app (AlarmScheduler).
 //
 
 import Foundation
@@ -178,12 +177,9 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         willPresent notification: UNNotification,
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
-        // Primer plano: el sonido ya lo toca SoundPlayer. Las alarmas tienen
-        // su propio aviso dentro del app, así que no se duplican.
-        if notification.request.identifier.hasPrefix("alarma-") {
-            completionHandler([])
-        } else {
-            completionHandler([.banner, .list])
-        }
+        // Primer plano: el banner se muestra siempre (el alerta "Detener alarma"
+        // de AlarmScheduler puede quedar tapado, p.ej. por una hoja abierta).
+        // Sin .sound: el audio ya lo reproduce SoundPlayer dentro del app.
+        completionHandler([.banner, .list])
     }
 }
