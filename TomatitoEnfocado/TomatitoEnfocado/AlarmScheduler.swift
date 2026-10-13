@@ -14,6 +14,7 @@
 import Foundation
 
 struct FiringAlarm: Identifiable {
+    let alarmId: Int
     let key: String
     let name: String
     let time: String
@@ -47,12 +48,18 @@ final class AlarmScheduler: ObservableObject {
         }
     }
 
-    func stopFiring() {
-        guard let firing else { return }
+    /// Recibe la alarma explícitamente: el .alert(item:) de SwiftUI pone
+    /// `firing` en nil ANTES de ejecutar la acción del botón, así que no se
+    /// puede leer de self.firing (antes salía sin parar el sonido).
+    func stopFiring(_ alarm: FiringAlarm) {
         SoundPlayer.stopAlarm()
-        stopped.insert(firing.key)
-        nextReminderAt.removeValue(forKey: firing.key)
-        self.firing = nil
+        stopped.insert(alarm.key)
+        nextReminderAt.removeValue(forKey: alarm.key)
+        if firing?.key == alarm.key { firing = nil }
+        // Avisa al servidor para que la web (y otros dispositivos) también la detengan.
+        if let client {
+            Task { _ = try? await client.requestRaw("alarmas/\(alarm.alarmId)/detener", method: "POST") }
+        }
     }
 
     private func ensureWatching() {
@@ -90,6 +97,8 @@ final class AlarmScheduler: ObservableObject {
             var time: String
             var sound: String?
             @FlexibleOptionalInt var reminderMinutes: Int?
+            /// true si ya se detuvo hoy desde otro dispositivo (p.ej. la web).
+            var detenida: Bool?
         }
         do {
             let alarmas: [UpcomingRaw] = try await client.request("alarmas/upcoming")
@@ -102,16 +111,27 @@ final class AlarmScheduler: ObservableObject {
                 let parts = alarma.time.split(separator: ":")
                 guard parts.count >= 2, let hour = Int(parts[0]), let minute = Int(parts[1]) else { continue }
                 let alarmMinutes = hour * 60 + minute
-                guard nowMinutes >= alarmMinutes else { continue }
-
                 let key = "\(alarma.id)_\(todayKey)_\(alarma.time)"
+
+                // La detuvieron en otro dispositivo: se calla y se cierra el aviso aquí también.
+                if alarma.detenida == true {
+                    stopped.insert(key)
+                    nextReminderAt.removeValue(forKey: key)
+                    if firing?.key == key {
+                        SoundPlayer.stopAlarm()
+                        firing = nil
+                    }
+                    continue
+                }
+
+                guard nowMinutes >= alarmMinutes else { continue }
                 if stopped.contains(key) { continue }
                 if let nextAt = nextReminderAt[key], now < nextAt { continue }
 
                 let reminderMinutes = max(1, alarma.reminderMinutes ?? 5)
                 nextReminderAt[key] = now.addingTimeInterval(TimeInterval(reminderMinutes * 60))
                 SoundPlayer.playAlarm(alarma.sound)
-                firing = FiringAlarm(key: key, name: alarma.name, time: alarma.time)
+                firing = FiringAlarm(alarmId: alarma.id, key: key, name: alarma.name, time: alarma.time)
             }
         } catch {
             // Silencioso: esto es un chequeo de fondo, no debe interrumpir la UI.

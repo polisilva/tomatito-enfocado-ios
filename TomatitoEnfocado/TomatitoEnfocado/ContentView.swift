@@ -48,7 +48,7 @@ struct ContentView: View {
                 title: Text("⏰ \(firing.name)"),
                 message: Text(firing.time),
                 dismissButton: .default(Text("Detener alarma")) {
-                    alarmScheduler.stopFiring()
+                    alarmScheduler.stopFiring(firing)
                 }
             )
         }
