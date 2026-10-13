@@ -15,7 +15,9 @@ struct CreateTemporizadorView: View {
     var onCreated: () -> Void
 
     @State private var name: String = ""
+    @State private var hours: Int = 0
     @State private var minutes: Int = 10
+    @State private var seconds: Int = 0
     @State private var sound: String = "default"
     @State private var isSaving = false
     @State private var errorMessage: String?
@@ -37,8 +39,14 @@ struct CreateTemporizadorView: View {
                 Section("Nombre") {
                     TextField("Ej: Ejercicio, Descanso...", text: $name)
                 }
-                Section("Duración") {
-                    Stepper("\(minutes) min", value: $minutes, in: 1...180)
+                Section {
+                    Stepper("\(hours) h", value: $hours, in: 0...23)
+                    Stepper("\(minutes) min", value: $minutes, in: 0...59)
+                    Stepper("\(seconds) s", value: $seconds, in: 0...59)
+                } header: {
+                    Text("Duración")
+                } footer: {
+                    Text("Total: \(durationLabel)")
                 }
                 Section("Sonido") {
                     Picker("Sonido", selection: $sound) {
@@ -66,17 +74,30 @@ struct CreateTemporizadorView: View {
                             Text("Guardar")
                         }
                     }
-                    .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty || isSaving)
+                    .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty || totalSeconds < 1 || isSaving)
                 }
             }
         }
         .onAppear { populateFromExisting() }
     }
 
+    private var totalSeconds: Int { hours * 3600 + minutes * 60 + seconds }
+
+    private var durationLabel: String {
+        var parts: [String] = []
+        if hours > 0 { parts.append("\(hours) h") }
+        if minutes > 0 { parts.append("\(minutes) min") }
+        if seconds > 0 || parts.isEmpty { parts.append("\(seconds) s") }
+        return parts.joined(separator: " ")
+    }
+
     private func populateFromExisting() {
         guard let existing else { return }
         name = existing.name
-        minutes = max(1, min(180, existing.duration / 60))
+        let total = max(0, existing.duration)
+        hours = min(23, total / 3600)
+        minutes = (total % 3600) / 60
+        seconds = total % 60
         sound = existing.sound ?? "default"
     }
 
@@ -84,7 +105,7 @@ struct CreateTemporizadorView: View {
         errorMessage = nil
         isSaving = true
         defer { isSaving = false }
-        let body: [String: Any] = ["name": name, "duration": minutes * 60, "sound": sound]
+        let body: [String: Any] = ["name": name, "duration": totalSeconds, "sound": sound]
         do {
             if let existing {
                 let _: Temporizador = try await session.client.request(

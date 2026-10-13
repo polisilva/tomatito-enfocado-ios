@@ -30,6 +30,7 @@
 		0F3542DAE8872B9284FF36FC /* AlarmScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDB3BF5AF1073E33004161FE /* AlarmScheduler.swift */; };
 		7C1FE646B879E22FD4644E8D /* HistorialView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACE13F1948893C8F0E43AF2C /* HistorialView.swift */; };
 		EAAE53E3CDDC0E0D84916C8B /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56D05B63757BC6E5BAA4152A /* NotificationManager.swift */; };
+		DCC88F443CAD4608DC334020 /* AjustesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AC14CCB2A5DF09762167DE5 /* AjustesView.swift */; };
 		E6777C4730494BAA00C4512F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E6777C4630494BAA00C4512F /* Assets.xcassets */; };
 		E6777C4A30494BAA00C4512F /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E6777C4930494BAA00C4512F /* Preview Assets.xcassets */; };
 		83709CD89B8639C7DBD0260D /* Sounds in Resources */ = {isa = PBXBuildFile; fileRef = 6592930CEC42D5877B074A74 /* Sounds */; };
@@ -60,6 +61,7 @@
 		FDB3BF5AF1073E33004161FE /* AlarmScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmScheduler.swift; sourceTree = "<group>"; };
 		ACE13F1948893C8F0E43AF2C /* HistorialView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistorialView.swift; sourceTree = "<group>"; };
 		56D05B63757BC6E5BAA4152A /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
+		8AC14CCB2A5DF09762167DE5 /* AjustesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AjustesView.swift; sourceTree = "<group>"; };
 		E6777C4630494BAA00C4512F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		E6777C4930494BAA00C4512F /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		6592930CEC42D5877B074A74 /* Sounds */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Sounds; sourceTree = "<group>"; };
@@ -118,6 +120,7 @@
 				FDB3BF5AF1073E33004161FE /* AlarmScheduler.swift */,
 				ACE13F1948893C8F0E43AF2C /* HistorialView.swift */,
 				56D05B63757BC6E5BAA4152A /* NotificationManager.swift */,
+				8AC14CCB2A5DF09762167DE5 /* AjustesView.swift */,
 				6592930CEC42D5877B074A74 /* Sounds */,
 				E6777C4630494BAA00C4512F /* Assets.xcassets */,
 				E6777C4830494BAA00C4512F /* Preview Content */,
@@ -227,6 +230,7 @@
 				0F3542DAE8872B9284FF36FC /* AlarmScheduler.swift in Sources */,
 				7C1FE646B879E22FD4644E8D /* HistorialView.swift in Sources */,
 				EAAE53E3CDDC0E0D84916C8B /* NotificationManager.swift in Sources */,
+				DCC88F443CAD4608DC334020 /* AjustesView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

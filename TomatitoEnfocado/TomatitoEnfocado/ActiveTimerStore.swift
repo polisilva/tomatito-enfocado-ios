@@ -125,7 +125,7 @@ final class ActiveTimerStore: ObservableObject {
                     }
                     if self.items[index].secondsLeft == 0 && !self.items[index].hasPlayedFinishSound {
                         self.items[index].hasPlayedFinishSound = true
-                        SoundPlayer.play(self.items[index].sound, defaultSound: "clasico")
+                        SoundPlayer.play(self.items[index].sound, defaultSound: AjustesStore.shared.sonidoPomodoro)
                         // Igual que en la web: con auto_start=1 y pause_on_end=0
                         // la fase avanza sola, sin esperar el toque en "Avanzar fase".
                         if self.items[index].autoStart && !self.items[index].pauseOnEnd {

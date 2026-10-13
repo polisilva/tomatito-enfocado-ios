@@ -42,9 +42,9 @@ enum SoundPlayer {
     private static var alarmStopWork: DispatchWorkItem?
     private static var cachedSiren: Data?
 
-    static func playAlarm(_ sound: String?) {
+    static func playAlarm(_ sound: String?, defaultSound: String = "campana") {
         stopAlarm()
-        let key = (sound?.isEmpty ?? true) || sound == "default" ? "campana" : sound!
+        let key = (sound?.isEmpty ?? true) || sound == "default" ? defaultSound : sound!
         switch key {
         case "silent":
             return

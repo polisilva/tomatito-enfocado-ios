@@ -33,6 +33,7 @@ struct MiCuentaView: View {
     @State private var cuenta: CuentaInfo?
     @State private var nextAlarma: UpcomingAlarma?
     @State private var showingPerfil = false
+    @ObservedObject private var ajustes = AjustesStore.shared
 
     var body: some View {
         NavigationStack {
@@ -80,6 +81,14 @@ struct MiCuentaView: View {
                     .padding(.vertical, 4)
                     .contentShape(Rectangle())
                     .onTapGesture { showingPerfil = true }
+                }
+
+                Section {
+                    NavigationLink {
+                        AjustesView()
+                    } label: {
+                        Label("Ajustes", systemImage: "gearshape")
+                    }
                 }
 
                 Section("Pomodoros guardados") {
@@ -196,7 +205,7 @@ struct MiCuentaView: View {
                         HStack {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(nextAlarma.name).font(.subheadline)
-                                Text("Próxima: \(nextAlarma.time)")
+                                Text("Próxima: \(formatHora(nextAlarma.time))")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }

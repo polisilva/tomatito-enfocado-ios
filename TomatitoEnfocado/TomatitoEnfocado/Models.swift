@@ -324,6 +324,20 @@ struct CreatedApplicationPassword: Decodable, Identifiable {
     var id: String { uuid }
 }
 
+// MARK: - Ajustes
+
+/// Preferencias del usuario guardadas en el servidor (GET/POST /ajustes) —
+/// las mismas que edita la página "Ajustes" de la web.
+struct AjustesInfo: Decodable {
+    var idioma: String
+    var hora: String
+    var tema: String
+    var notificaciones: String
+    var sonidoPomodoro: String
+    var sonidoTemporizador: String
+    var sonidoAlarma: String
+}
+
 // MARK: - Alarmas
 
 struct UpcomingAlarma: Decodable, Identifiable {
@@ -341,6 +355,7 @@ struct Alarma: Decodable, Identifiable {
     var repeatMode: String
     var startDate: String?
     var endDate: String?
+    @FlexibleOptionalInt var reminderMinutes: Int?
     var sound: String?
     @FlexibleInt var mon: Int
     @FlexibleInt var tue: Int

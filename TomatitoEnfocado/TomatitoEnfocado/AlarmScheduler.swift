@@ -130,7 +130,7 @@ final class AlarmScheduler: ObservableObject {
 
                 let reminderMinutes = max(1, alarma.reminderMinutes ?? 5)
                 nextReminderAt[key] = now.addingTimeInterval(TimeInterval(reminderMinutes * 60))
-                SoundPlayer.playAlarm(alarma.sound)
+                SoundPlayer.playAlarm(alarma.sound, defaultSound: AjustesStore.shared.sonidoAlarma)
                 firing = FiringAlarm(alarmId: alarma.id, key: key, name: alarma.name, time: alarma.time)
             }
         } catch {

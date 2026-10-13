@@ -25,6 +25,7 @@ enum HistorialGranularidad: String, CaseIterable, Identifiable {
 
 struct HistorialView: View {
     @EnvironmentObject var session: SessionStore
+    @ObservedObject private var ajustes = AjustesStore.shared
 
     @State private var baseDate = Calendar.current.startOfDay(for: Date())
     @State private var granularidad: HistorialGranularidad = .day
@@ -217,7 +218,7 @@ struct HistorialView: View {
             if let detail = sesion.detailLabel {
                 Text(detail).font(.caption).foregroundStyle(.secondary)
             }
-            Text("\(sesion.dateLabel) · \(sesion.timeLabel) · \(sesion.durationLabel)")
+            Text("\(sesion.dateLabel) · \(formatHora(sesion.timeLabel)) · \(sesion.durationLabel)")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }

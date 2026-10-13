@@ -53,7 +53,7 @@ final class ActiveTemporizadoresStore: ObservableObject {
                     }
                     if self.items[index].secondsLeft == 0 && !self.items[index].hasPlayedFinishSound {
                         self.items[index].hasPlayedFinishSound = true
-                        SoundPlayer.play(self.items[index].sound, defaultSound: "digital")
+                        SoundPlayer.play(self.items[index].sound, defaultSound: AjustesStore.shared.sonidoTemporizador)
                     }
                 }
             }
@@ -90,6 +90,23 @@ final class ActiveTemporizadoresStore: ObservableObject {
                 items[index].isPaused = true
             }
             syncNotification(items[index])
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    /// Igual al ↻ de la web: POST /temporizadores/{timer_id}/restart deja el
+    /// mismo timer corriendo otra vez desde su duración original.
+    func restart(_ item: ActiveTemporizadorItem) async {
+        guard let client, let index = items.firstIndex(where: { $0.timerId == item.timerId }) else { return }
+        errorMessage = nil
+        do {
+            let json = try await client.requestRaw("temporizadores/\(item.timerId)/restart", method: "POST")
+            items[index].secondsLeft = intFromAny(json["duration"])
+            items[index].isPaused = false
+            items[index].hasPlayedFinishSound = false
+            syncNotification(items[index])
+            ensureTicking()
         } catch {
             errorMessage = error.localizedDescription
         }

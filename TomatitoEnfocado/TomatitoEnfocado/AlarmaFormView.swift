@@ -19,6 +19,11 @@ struct AlarmaFormView: View {
     @State private var repeatMode: String = "none"
     @State private var days: Set<String> = []
     @State private var sound: String = "default"
+    @State private var reminderMinutes: Int = 5
+    @State private var hasStartDate = false
+    @State private var startDate = Date()
+    @State private var hasEndDate = false
+    @State private var endDate = Date()
     @State private var isSaving = false
     @State private var errorMessage: String?
 
@@ -43,6 +48,16 @@ struct AlarmaFormView: View {
         ("vibracion", "Solo vibración"),
         ("silent", "Silencio"),
     ]
+
+    // Mismas opciones que "Recordar cada" en la web.
+    private let reminderOptions = [5, 10, 15, 20, 30, 60]
+
+    private static let isoDay: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.dateFormat = "yyyy-MM-dd"
+        return f
+    }()
 
     private let dayOptions: [(key: String, label: String)] = [
         ("mon", "L"), ("tue", "M"), ("wed", "X"), ("thu", "J"),
@@ -93,6 +108,31 @@ struct AlarmaFormView: View {
                     }
                 }
 
+                Section {
+                    Picker("Recordar cada", selection: $reminderMinutes) {
+                        ForEach(reminderOptions, id: \.self) { Text("\($0) minutos").tag($0) }
+                    }
+                } header: {
+                    Text("Recordatorio")
+                } footer: {
+                    Text("Mientras no la detengas, la alarma se repite con este intervalo.")
+                }
+
+                Section {
+                    Toggle("Fecha de inicio", isOn: $hasStartDate.animation())
+                    if hasStartDate {
+                        DatePicker("Desde", selection: $startDate, displayedComponents: .date)
+                    }
+                    Toggle("Fecha límite", isOn: $hasEndDate.animation())
+                    if hasEndDate {
+                        DatePicker("Hasta", selection: $endDate, in: (hasStartDate ? startDate : .distantPast)..., displayedComponents: .date)
+                    }
+                } header: {
+                    Text("Vigencia")
+                } footer: {
+                    Text("Opcional: la alarma solo suena dentro de este período.")
+                }
+
                 Section("Sonido") {
                     Picker("Sonido", selection: $sound) {
                         ForEach(soundOptions, id: \.key) { option in
@@ -134,6 +174,15 @@ struct AlarmaFormView: View {
         name = existing.name
         repeatMode = existing.repeatMode
         sound = existing.sound ?? "default"
+        reminderMinutes = reminderOptions.contains(existing.reminderMinutes ?? 5) ? (existing.reminderMinutes ?? 5) : 5
+        if let d = existing.startDate.flatMap({ Self.isoDay.date(from: $0) }) {
+            hasStartDate = true
+            startDate = d
+        }
+        if let d = existing.endDate.flatMap({ Self.isoDay.date(from: $0) }) {
+            hasEndDate = true
+            endDate = d
+        }
         days = Set(dayOptions.map(\.key).filter { key in
             switch key {
             case "mon": return existing.mon != 0
@@ -169,6 +218,10 @@ struct AlarmaFormView: View {
             "repeat_mode": repeatMode,
             "is_active": existing?.isActive ?? 1,
             "sound": sound,
+            "reminder_minutes": reminderMinutes,
+            // Cadena vacía = sin límite (el servidor la guarda como NULL).
+            "start_date": hasStartDate ? Self.isoDay.string(from: startDate) : "",
+            "end_date": hasEndDate ? Self.isoDay.string(from: endDate) : "",
         ]
         for day in dayOptions {
             body[day.key] = days.contains(day.key) ? 1 : 0

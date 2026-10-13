@@ -10,6 +10,7 @@ import SwiftUI
 
 struct AlarmasView: View {
     @EnvironmentObject var session: SessionStore
+    @ObservedObject private var ajustes = AjustesStore.shared
 
     @State private var alarmas: [Alarma] = []
     @State private var isLoading = false
@@ -52,7 +53,7 @@ struct AlarmasView: View {
 
                                         VStack(alignment: .leading, spacing: 4) {
                                             Text(alarma.name).font(.headline)
-                                            Text(alarma.timeLabel ?? alarma.time)
+                                            Text(hourLabel(for: alarma))
                                                 .font(.subheadline)
                                                 .foregroundStyle(.secondary)
                                             Text(alarma.repeatLabel ?? alarma.repeatMode)
@@ -141,6 +142,13 @@ struct AlarmasView: View {
             }
         }
         .task { await load() }
+    }
+
+    /// "A las 07:00 (mañana)" del servidor, con la hora en el formato elegido en Ajustes.
+    private func hourLabel(for alarma: Alarma) -> String {
+        let hhmm = String(alarma.time.prefix(5))
+        guard let label = alarma.timeLabel else { return formatHora(hhmm) }
+        return label.replacingOccurrences(of: hhmm, with: formatHora(hhmm))
     }
 
     private func load() async {

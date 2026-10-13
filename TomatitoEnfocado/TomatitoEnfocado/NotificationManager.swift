@@ -20,6 +20,13 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
 
     private let center = UNUserNotificationCenter.current()
 
+    private static let isoDay: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.dateFormat = "yyyy-MM-dd"
+        return f
+    }()
+
     func setup() {
         center.delegate = self
         installSoundsForNotifications()
@@ -61,6 +68,7 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     // MARK: - Pomodoros y temporizadores (cuenta atrás)
 
     func schedule(id: String, title: String, body: String, after seconds: Int, sound: String?, defaultSound: String) {
+        guard AjustesStore.shared.notificacionesActivas else { return }
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body
@@ -94,7 +102,7 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
             body: body,
             after: item.secondsLeft,
             sound: item.sound,
-            defaultSound: "clasico"
+            defaultSound: AjustesStore.shared.sonidoPomodoro
         )
     }
 
@@ -105,7 +113,7 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
             body: "¡Tiempo terminado!",
             after: item.secondsLeft,
             sound: item.sound,
-            defaultSound: "digital"
+            defaultSound: AjustesStore.shared.sonidoTemporizador
         )
     }
 
@@ -119,6 +127,7 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
             guard let self else { return }
             let old = requests.map(\.identifier).filter { $0.hasPrefix("alarma-") }
             self.center.removePendingNotificationRequests(withIdentifiers: old)
+            guard AjustesStore.shared.notificacionesActivas else { return }
             for alarma in alarmas where alarma.isOn {
                 self.scheduleAlarma(alarma)
             }
@@ -148,10 +157,16 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         }
         let repeats = alarma.repeatMode != "none"
 
+        // Vigencia (fecha de inicio / límite). Los avisos solo se programan si hoy
+        // está dentro del período; se reevalúan en cada sincronización.
+        let today = Self.isoDay.string(from: Date())
+        if let end = alarma.endDate, !end.isEmpty, end < today { return }
+        if let start = alarma.startDate, !start.isEmpty, start > today { return }
+
         let content = UNMutableNotificationContent()
         content.title = "⏰ \(alarma.name)"
         content.body = String(format: "%02d:%02d", hour, minute)
-        content.sound = notificationSound(alarma.sound, defaultSound: "campana")
+        content.sound = notificationSound(alarma.sound, defaultSound: AjustesStore.shared.sonidoAlarma)
 
         func add(_ suffix: String, weekday: Int?) {
             var components = DateComponents()

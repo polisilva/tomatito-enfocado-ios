@@ -37,6 +37,7 @@ struct AhoraMismoView: View {
 
     @State private var upcomingAlarmas: [UpcomingAlarma] = []
     @State private var historial: [SesionHistorial] = []
+    @ObservedObject private var ajustes = AjustesStore.shared
 
     var body: some View {
         NavigationStack {
@@ -111,6 +112,13 @@ struct AhoraMismoView: View {
                                         }
                                         .buttonStyle(.bordered)
                                         Button {
+                                            Task { await activeTemporizadores.restart(item) }
+                                        } label: {
+                                            Image(systemName: "arrow.clockwise")
+                                        }
+                                        .buttonStyle(.bordered)
+                                        .tint(.gray)
+                                        Button {
                                             Task { await activeTemporizadores.stop(item) }
                                         } label: {
                                             Image(systemName: "stop.fill")
@@ -143,7 +151,7 @@ struct AhoraMismoView: View {
                                     HStack {
                                         Text(alarma.name).font(.subheadline)
                                         Spacer()
-                                        Text(alarma.time)
+                                        Text(formatHora(alarma.time))
                                             .font(.subheadline)
                                             .foregroundStyle(.secondary)
                                             .monospacedDigit()
@@ -183,7 +191,7 @@ struct AhoraMismoView: View {
                                     HStack {
                                         VStack(alignment: .leading, spacing: 2) {
                                             Text(sesion.name).font(.subheadline)
-                                            Text("\(sesion.timeLabel) · \(sesion.durationLabel)")
+                                            Text("\(formatHora(sesion.timeLabel)) · \(sesion.durationLabel)")
                                                 .font(.caption)
                                                 .foregroundStyle(.secondary)
                                         }

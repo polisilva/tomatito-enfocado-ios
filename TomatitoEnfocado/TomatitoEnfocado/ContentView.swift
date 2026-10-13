@@ -23,6 +23,7 @@ struct ContentView: View {
     @StateObject private var activeTimer = ActiveTimerStore()
     @StateObject private var activeTemporizadores = ActiveTemporizadoresStore()
     @StateObject private var alarmScheduler = AlarmScheduler()
+    @ObservedObject private var ajustes = AjustesStore.shared
 
     var body: some View {
         Group {
@@ -36,6 +37,8 @@ struct ContentView: View {
         .environmentObject(activeTimer)
         .environmentObject(activeTemporizadores)
         .environmentObject(alarmScheduler)
+        // Tema de Ajustes (la web solo ofrece claro/oscuro, sin "sistema").
+        .preferredColorScheme(ajustes.tema == "oscuro" ? .dark : .light)
         .onAppear {
             configureStores(loggedIn: session.isLoggedIn)
         }
@@ -58,6 +61,7 @@ struct ContentView: View {
         let client = loggedIn ? session.client : nil
         if loggedIn {
             NotificationManager.shared.requestAuthorization()
+            if let client { Task { await AjustesStore.shared.load(client: client) } }
         } else {
             // Al cerrar sesión no deben seguir llegando avisos de la cuenta anterior.
             NotificationManager.shared.cancelAll(prefix: "")
