@@ -40,6 +40,7 @@ struct AhoraMismoView: View {
     @State private var upcomingAlarmas: [UpcomingAlarma] = []
     @State private var historial: [SesionHistorial] = []
     @State private var pomodoros: [Pomodoro] = []
+    @State private var lastPomodoroId: Int?
     @State private var showingCreate = false
     @ObservedObject private var ajustes = AjustesStore.shared
 
@@ -255,13 +256,19 @@ struct AhoraMismoView: View {
 
     /// El pomodoro usado más recientemente, para "Reiniciar «último»" (como en la web).
     private var lastUsedPomodoro: Pomodoro? {
-        pomodoros.filter { $0.lastUsedAt != nil }.max { ($0.lastUsedAt ?? "") < ($1.lastUsedAt ?? "") }
+        pomodoros.first { $0.id == lastPomodoroId }
     }
 
     private func loadPomodoros() async {
         if let loaded: [Pomodoro] = try? await session.client.request("pomodoros") {
             pomodoros = loaded
         }
+        // /current devuelve el último pomodoro usado cuando no hay ninguno en
+        // marcha — la misma fuente que usa el dashboard web ("Reiniciar el último").
+        struct Current: Decodable {
+            @FlexibleInt var pomodoroId: Int
+        }
+        lastPomodoroId = (try? await session.client.request("current") as Current)?.pomodoroId
     }
 
     private func historialColor(_ state: String) -> Color {
@@ -344,6 +351,7 @@ struct IdlePomodoroCard: View {
                             Label("Reiniciar \"\(lastPomodoro.name)\"", systemImage: "arrow.clockwise")
                                 .font(.subheadline.weight(.semibold))
                                 .lineLimit(1)
+                                .minimumScaleFactor(0.75)
                                 .foregroundStyle(.white)
                                 .padding(.horizontal, 16)
                                 .frame(height: 46)
