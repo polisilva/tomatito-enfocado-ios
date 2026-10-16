@@ -263,12 +263,17 @@ struct AhoraMismoView: View {
         if let loaded: [Pomodoro] = try? await session.client.request("pomodoros") {
             pomodoros = loaded
         }
-        // /current devuelve el último pomodoro usado cuando no hay ninguno en
-        // marcha — la misma fuente que usa el dashboard web ("Reiniciar el último").
+        // Igual que el dashboard web: "Reiniciar el último" sale de `last_today`
+        // (último pomodoro iniciado hoy). `data` de /current puede apuntar a un
+        // timer huérfano de un pomodoro ya borrado, así que no se usa para esto.
         struct Current: Decodable {
-            @FlexibleInt var pomodoroId: Int
+            struct Last: Decodable {
+                @FlexibleInt var id: Int
+            }
+            var lastToday: Last?
         }
-        lastPomodoroId = (try? await session.client.request("current") as Current)?.pomodoroId
+        let current: Current? = try? await session.client.requestFull("current")
+        lastPomodoroId = current?.lastToday?.id
     }
 
     private func historialColor(_ state: String) -> Color {
