@@ -126,6 +126,8 @@ struct CreatePomodoroView: View {
     /// Tocar un resultado de la búsqueda inicia ese pomodoro directamente —
     /// mismo comportamiento que el ▶ en "Mi cuenta" — y cierra esta hoja.
     var onStart: ((Pomodoro) -> Void)? = nil
+    /// Si es true, el pomodoro recién creado se inicia solo ("Guardar y lanzar" de la web).
+    var startAfterCreate = false
 
     @State private var searchText: String = ""
     @State private var name: String = ""
@@ -356,11 +358,12 @@ struct CreatePomodoroView: View {
                     body: body
                 )
             } else {
-                let _: Pomodoro = try await session.client.request(
+                let created: Pomodoro = try await session.client.request(
                     "pomodoros",
                     method: "POST",
                     body: body
                 )
+                if startAfterCreate { onStart?(created) }
             }
             onCreated()
             dismiss()

@@ -227,7 +227,8 @@ struct AhoraMismoView: View {
                     onStart: { pomodoro in
                         showingCreate = false
                         Task { await activeTimer.start(pomodoro: pomodoro) }
-                    }
+                    },
+                    startAfterCreate: true
                 )
                 .environmentObject(session)
             }
