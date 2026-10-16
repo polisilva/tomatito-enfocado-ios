@@ -16,14 +16,16 @@ func timeString(_ seconds: Int) -> String {
 
 struct CircularTimerRing: View {
     var progress: Double
+    var track: Color = Color.gray.opacity(0.15)
+    var fill: Color = .red
 
     var body: some View {
         ZStack {
             Circle()
-                .stroke(Color.gray.opacity(0.15), lineWidth: 16)
+                .stroke(track, lineWidth: 16)
             Circle()
                 .trim(from: 0, to: max(0, min(1, progress)))
-                .stroke(Color.red, style: StrokeStyle(lineWidth: 16, lineCap: .round))
+                .stroke(fill, style: StrokeStyle(lineWidth: 16, lineCap: .round))
                 .rotationEffect(.degrees(-90))
                 .animation(.linear(duration: 0.9), value: progress)
         }
@@ -462,28 +464,29 @@ struct ActivePomodoroCard: View {
             } else {
                 Text(item.name)
                     .font(.headline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.white)
 
                 ZStack {
-                    CircularTimerRing(progress: item.progress)
+                    CircularTimerRing(progress: item.progress, track: .white.opacity(0.28), fill: .white)
                         .frame(width: 140, height: 140)
                     VStack(spacing: 4) {
                         Text(item.phaseLabel)
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.white.opacity(0.85))
                         Text(timeString(item.secondsLeft))
                             .font(.system(size: 30, weight: .bold, design: .rounded))
                             .monospacedDigit()
+                            .foregroundStyle(.white)
                         Text("Ciclo \(item.cycleLabel)")
                             .font(.caption2)
-                            .foregroundStyle(.tertiary)
+                            .foregroundStyle(.white.opacity(0.75))
                     }
                 }
 
                 if !item.nextPhaseText.isEmpty {
                     Text(item.nextPhaseText)
                         .font(.footnote)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.white.opacity(0.9))
                 }
 
                 if item.secondsLeft <= 0 {
@@ -496,12 +499,15 @@ struct ActivePomodoroCard: View {
                             Text("Avanzando de fase...")
                         }
                         .font(.footnote)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.white)
+                        .tint(.white)
                     } else {
                         Button("Avanzar fase") {
                             Task { await activeTimer.advancePhase(item) }
                         }
                         .buttonStyle(.borderedProminent)
+                        .tint(.white)
+                        .foregroundStyle(Color(red: 0.95, green: 0.28, blue: 0.32))
                     }
                 } else {
                     HStack(spacing: 16) {
@@ -509,19 +515,26 @@ struct ActivePomodoroCard: View {
                             Task { await activeTimer.togglePause(item) }
                         }
                         .buttonStyle(.bordered)
+                        .tint(.white)
 
                         Button("Cancelar") {
                             Task { await activeTimer.stop(item) }
                         }
                         .buttonStyle(.bordered)
-                        .tint(.gray)
+                        .tint(.white)
                     }
                 }
             }
         }
         .padding()
         .frame(maxWidth: .infinity)
-        .background(Color(.secondarySystemGroupedBackground))
+        .background(
+            LinearGradient(
+                colors: [Color(red: 1.0, green: 0.41, blue: 0.41), Color(red: 0.95, green: 0.28, blue: 0.32)],
+                startPoint: .topLeading, endPoint: .bottomTrailing
+            )
+        )
         .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: .black.opacity(0.12), radius: 10, y: 5)
     }
 }
