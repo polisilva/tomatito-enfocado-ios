@@ -315,8 +315,11 @@ final class ActiveTimerStore: ObservableObject {
             )
             if result.isFinal {
                 try? await client.requestRaw("complete?timer_id=\(item.timerId)", method: "POST")
-                items[index].isFinished = true
+                // Concluido: el servidor ya lo registró en el historial, así que
+                // sale de "Ahora mismo" solo (no hace falta cerrarlo a mano).
+                items.removeAll { $0.timerId == item.timerId }
                 NotificationManager.shared.cancel(ids: ["pomodoro-\(item.timerId)"])
+                syncPrincipalIfNeeded()
             } else {
                 items[index].phase = result.phase ?? items[index].phase
                 items[index].totalSeconds = result.duration ?? items[index].totalSeconds
