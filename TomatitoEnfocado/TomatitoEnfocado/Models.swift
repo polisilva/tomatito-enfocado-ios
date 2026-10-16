@@ -76,6 +76,8 @@ struct Pomodoro: Decodable, Identifiable {
     var sound: String?
     var durationLabel: String?
     var lastUsedLabel: String?
+    /// "YYYY-MM-DD HH:MM:SS" o nil si nunca se usó — para "Reiniciar el último".
+    var lastUsedAt: String?
 }
 
 /// Estado real de un pomodoro en marcha, tal como lo ve el servidor

@@ -37,6 +37,8 @@ struct AhoraMismoView: View {
 
     @State private var upcomingAlarmas: [UpcomingAlarma] = []
     @State private var historial: [SesionHistorial] = []
+    @State private var pomodoros: [Pomodoro] = []
+    @State private var showingCreate = false
     @ObservedObject private var ajustes = AjustesStore.shared
 
     var body: some View {
@@ -44,12 +46,12 @@ struct AhoraMismoView: View {
             ScrollView {
                 VStack(spacing: 28) {
                     if activeTimer.items.isEmpty {
-                        ContentUnavailableView(
-                            "Nada en marcha",
-                            systemImage: "timer",
-                            description: Text("Inicia un pomodoro desde Mi cuenta para verlo aquí.")
+                        IdlePomodoroCard(
+                            lastPomodoro: lastUsedPomodoro,
+                            onCreate: { showingCreate = true },
+                            onRestart: { pomodoro in Task { await activeTimer.start(pomodoro: pomodoro) } }
                         )
-                        .padding(.top, 40)
+                        .padding(.horizontal)
                     } else {
                         VStack(spacing: 16) {
                             // Un solo anel grande — el pomodoro "principal" (⭐), igual
@@ -217,10 +219,27 @@ struct AhoraMismoView: View {
             .navigationTitle("Ahora mismo")
             .task { await loadUpcomingAlarmas() }
             .task { await loadHistorial() }
+            .task { await loadPomodoros() }
+            .sheet(isPresented: $showingCreate) {
+                CreatePomodoroView(
+                    pomodoros: pomodoros,
+                    onCreated: { Task { await loadPomodoros() } },
+                    onStart: { pomodoro in
+                        showingCreate = false
+                        Task { await activeTimer.start(pomodoro: pomodoro) }
+                    }
+                )
+                .environmentObject(session)
+            }
             .task { await resyncLoop() }
             // Al detener o terminar un pomodoro el servidor crea la sesión del
             // historial: se recarga para que aparezca sin esperar un refresh manual.
-            .onChange(of: activeTimer.items.count) { _, _ in Task { await loadHistorial() } }
+            .onChange(of: activeTimer.items.count) { _, _ in
+                Task {
+                    await loadHistorial()
+                    await loadPomodoros()
+                }
+            }
             .onChange(of: activeTimer.items.filter(\.isFinished).count) { _, _ in Task { await loadHistorial() } }
             .refreshable {
                 await loadUpcomingAlarmas()
@@ -228,6 +247,17 @@ struct AhoraMismoView: View {
                 await activeTimer.resyncFromServer()
                 await activeTemporizadores.resyncFromServer()
             }
+        }
+    }
+
+    /// El pomodoro usado más recientemente, para "Reiniciar «último»" (como en la web).
+    private var lastUsedPomodoro: Pomodoro? {
+        pomodoros.filter { $0.lastUsedAt != nil }.max { ($0.lastUsedAt ?? "") < ($1.lastUsedAt ?? "") }
+    }
+
+    private func loadPomodoros() async {
+        if let loaded: [Pomodoro] = try? await session.client.request("pomodoros") {
+            pomodoros = loaded
         }
     }
 
@@ -267,6 +297,80 @@ struct AhoraMismoView: View {
         }
     }
 
+}
+
+/// Tarjeta roja de "Sin pomodoro activo" — mismo diseño que la del dashboard web.
+struct IdlePomodoroCard: View {
+    var lastPomodoro: Pomodoro?
+    var onCreate: () -> Void
+    var onRestart: (Pomodoro) -> Void
+
+    var body: some View {
+        VStack(spacing: 0) {
+            VStack(spacing: 18) {
+                HStack(spacing: 12) {
+                    Image("AppLogo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 44, height: 44)
+                    Text("Sin pomodoro activo")
+                        .font(.title3.weight(.medium))
+                        .foregroundStyle(.white)
+                }
+
+                ZStack {
+                    Circle().stroke(Color.white.opacity(0.28), lineWidth: 10)
+                    Text("--:--")
+                        .font(.system(size: 34, weight: .bold, design: .rounded))
+                        .foregroundStyle(.white)
+                }
+                .frame(width: 140, height: 140)
+
+                HStack(spacing: 12) {
+                    Button(action: onCreate) {
+                        Image(systemName: "plus")
+                            .font(.title2.weight(.semibold))
+                            .foregroundStyle(.white)
+                            .frame(width: 46, height: 46)
+                            .background(Color.white.opacity(0.2))
+                            .clipShape(Circle())
+                            .overlay(Circle().stroke(Color.white.opacity(0.55), lineWidth: 1.5))
+                    }
+                    if let lastPomodoro {
+                        Button { onRestart(lastPomodoro) } label: {
+                            Label("Reiniciar \"\(lastPomodoro.name)\"", systemImage: "arrow.clockwise")
+                                .font(.subheadline.weight(.semibold))
+                                .lineLimit(1)
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 16)
+                                .frame(height: 46)
+                                .background(Color.white.opacity(0.2))
+                                .clipShape(Capsule())
+                                .overlay(Capsule().stroke(Color.white.opacity(0.55), lineWidth: 1.5))
+                        }
+                    }
+                }
+            }
+            .padding(.vertical, 24)
+            .padding(.horizontal)
+            .frame(maxWidth: .infinity)
+
+            Text("En espera")
+                .font(.footnote)
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 9)
+                .background(Color.black.opacity(0.12))
+        }
+        .background(
+            LinearGradient(
+                colors: [Color(red: 1.0, green: 0.41, blue: 0.41), Color(red: 0.95, green: 0.28, blue: 0.32)],
+                startPoint: .topLeading, endPoint: .bottomTrailing
+            )
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: .black.opacity(0.12), radius: 10, y: 5)
+    }
 }
 
 /// Lista compacta de todos los pomodoros activos, con una estrella para
