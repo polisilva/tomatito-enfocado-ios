@@ -2,7 +2,7 @@
 //  RootTabView.swift
 //  TomatitoEnfocado
 //
-//  Navegación raíz por abas: Mi cuenta / Ahora mismo / Alarmas / Temporizadores
+//  Navegación raíz por abas: Inicio / Ahora mismo / Alarmas / Temporizadores / Ajustes
 //  (especificación "13. Móvil").
 //
 
@@ -41,7 +41,7 @@ struct RootTabView: View {
             MiCuentaView(selectedTab: $selectedTab)
                 .tabItem {
                     Label {
-                        Text("Mi cuenta")
+                        Text("Inicio")
                     } icon: {
                         tomatoTabIcon()
                     }
@@ -59,6 +59,12 @@ struct RootTabView: View {
             TemporizadoresView(selectedTab: $selectedTab)
                 .tabItem { Label("Temporizadores", systemImage: "hourglass") }
                 .tag(3)
+
+            NavigationStack {
+                AjustesView()
+            }
+            .tabItem { Label("Ajustes", systemImage: "gearshape") }
+            .tag(4)
         }
     }
 }

@@ -83,14 +83,6 @@ struct MiCuentaView: View {
                     .onTapGesture { showingPerfil = true }
                 }
 
-                Section {
-                    NavigationLink {
-                        AjustesView()
-                    } label: {
-                        Label("Ajustes", systemImage: "gearshape")
-                    }
-                }
-
                 Section("Pomodoros guardados") {
                     if isLoading && pomodoros.isEmpty {
                         ProgressView()
