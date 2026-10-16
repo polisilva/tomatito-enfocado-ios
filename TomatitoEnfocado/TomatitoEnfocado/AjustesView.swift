@@ -90,6 +90,8 @@ struct AjustesView: View {
     @EnvironmentObject var activeTemporizadores: ActiveTemporizadoresStore
     @EnvironmentObject var alarmScheduler: AlarmScheduler
     @ObservedObject private var ajustes = AjustesStore.shared
+    @State private var cuenta: CuentaInfo?
+    @State private var showingPerfil = false
 
     private let sonidos: [(key: String, label: String)] = [
         ("clasico", "Clásico"), ("campana", "Campana"), ("digital", "Digital"),
@@ -102,6 +104,31 @@ struct AjustesView: View {
 
     var body: some View {
         Form {
+            // Como el app Ajustes de iOS: tarjeta de perfil arriba, que abre "Mi perfil".
+            Section {
+                Button {
+                    showingPerfil = true
+                } label: {
+                    HStack(spacing: 14) {
+                        ProfileAvatar(url: cuenta?.avatarURL, email: cuenta?.email ?? session.username, size: 56)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(cuenta?.displayName.isEmpty == false ? cuenta!.displayName : session.username)
+                                .font(.headline)
+                            Text(cuenta?.email ?? session.username)
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.footnote)
+                            .foregroundStyle(.tertiary)
+                    }
+                    .padding(.vertical, 4)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
+
             Section("Idioma y región") {
                 LabeledContent("Idioma", value: "Español (España)")
                 Picker("Formato de hora", selection: $ajustes.hora) {
@@ -144,6 +171,11 @@ struct AjustesView: View {
         .onChange(of: ajustes.signature) { _, _ in
             Task { await persist() }
         }
+        .task { await loadCuenta() }
+        .sheet(isPresented: $showingPerfil, onDismiss: { Task { await loadCuenta() } }) {
+            PerfilView()
+                .environmentObject(session)
+        }
     }
 
     private func soundPicker(_ title: String, selection: Binding<String>, options: [(key: String, label: String)]) -> some View {
@@ -158,6 +190,10 @@ struct AjustesView: View {
             }
             .buttonStyle(.borderless)
         }
+    }
+
+    private func loadCuenta() async {
+        cuenta = try? await session.client.request("mi-cuenta")
     }
 
     private func persist() async {
