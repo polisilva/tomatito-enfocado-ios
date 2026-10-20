@@ -37,8 +37,8 @@ struct ContentView: View {
         .environmentObject(activeTimer)
         .environmentObject(activeTemporizadores)
         .environmentObject(alarmScheduler)
-        // Tema de Ajustes (la web solo ofrece claro/oscuro, sin "sistema").
-        .preferredColorScheme(ajustes.tema == "oscuro" ? .dark : .light)
+        // Tema de Ajustes; "auto" (nil) sigue el modo del dispositivo.
+        .preferredColorScheme(ajustes.tema == "oscuro" ? .dark : (ajustes.tema == "claro" ? .light : nil))
         .onAppear {
             configureStores(loggedIn: session.isLoggedIn)
         }

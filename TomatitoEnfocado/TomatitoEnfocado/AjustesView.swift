@@ -141,6 +141,7 @@ struct AjustesView: View {
                 Picker("Tema", selection: $ajustes.tema) {
                     Text("Claro").tag("claro")
                     Text("Oscuro").tag("oscuro")
+                    Text("Automático").tag("auto")
                 }
                 .pickerStyle(.segmented)
             }
