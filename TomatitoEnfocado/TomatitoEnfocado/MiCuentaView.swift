@@ -226,26 +226,29 @@ struct MiCuentaView: View {
     }
 
     private var header: some View {
-        HStack {
-            Color.clear.frame(width: 48, height: 48)
-            Spacer()
-            HStack(spacing: 8) {
+        ZStack {
+            HStack(spacing: 6) {
                 Text("🍅")
                 Text("Tomatito").foregroundStyle(.red)
                 Text("Enfocado").foregroundStyle(.primary)
             }
-            .font(.system(size: 28, weight: .bold))
-            .minimumScaleFactor(0.7)
+            .font(.system(size: 24, weight: .bold))
             .lineLimit(1)
-            Spacer()
-            Button {
-                showingPerfil = true
-            } label: {
-                ProfileAvatar(url: cuenta?.avatarURL, email: cuenta?.email ?? session.username, size: 48)
+            .minimumScaleFactor(0.6)
+            .padding(.horizontal, 60)
+
+            HStack {
+                Spacer()
+                Button {
+                    showingPerfil = true
+                } label: {
+                    ProfileAvatar(url: cuenta?.avatarURL, email: cuenta?.email ?? session.username, size: 44)
+                }
+                .accessibilityLabel("Mi perfil")
             }
-            .accessibilityLabel("Mi perfil")
         }
-        .padding(.horizontal, 20)
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 16)
         .padding(.top, 8)
         .padding(.bottom, 12)
     }
