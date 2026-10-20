@@ -226,7 +226,7 @@ struct MiCuentaView: View {
     }
 
     private var header: some View {
-        ZStack {
+        HStack(spacing: 12) {
             HStack(spacing: 6) {
                 Text("🍅")
                 Text("Tomatito").foregroundStyle(.red)
@@ -235,17 +235,13 @@ struct MiCuentaView: View {
             .font(.system(size: 24, weight: .bold))
             .lineLimit(1)
             .minimumScaleFactor(0.6)
-            .padding(.horizontal, 60)
 
-            HStack {
-                Spacer()
-                Button {
-                    showingPerfil = true
-                } label: {
-                    ProfileAvatar(url: cuenta?.avatarURL, email: cuenta?.email ?? session.username, size: 44)
-                }
-                .accessibilityLabel("Mi perfil")
+            Button {
+                showingPerfil = true
+            } label: {
+                ProfileAvatar(url: cuenta?.avatarURL, email: cuenta?.email ?? session.username, size: 44)
             }
+            .accessibilityLabel("Mi perfil")
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 16)
