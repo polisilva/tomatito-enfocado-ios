@@ -58,6 +58,8 @@ struct MiCuentaView: View {
 
     var body: some View {
         NavigationStack {
+            VStack(spacing: 0) {
+            header
             List {
                 Section("Pomodoros guardados") {
                     if isLoading && pomodoros.isEmpty {
@@ -191,25 +193,8 @@ struct MiCuentaView: View {
                     }
                 }
             }
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        showingPerfil = true
-                    } label: {
-                        ProfileAvatar(url: cuenta?.avatarURL, email: cuenta?.email ?? session.username, size: 32)
-                    }
-                    .accessibilityLabel("Mi perfil")
-                }
-                ToolbarItem(placement: .principal) {
-                    HStack(spacing: 4) {
-                        Text("🍅")
-                        Text("Tomatito").fontWeight(.bold).foregroundStyle(.red)
-                        Text("Enfocado").fontWeight(.bold).foregroundStyle(.primary)
-                    }
-                    .font(.title3)
-                }
             }
+            .toolbar(.hidden, for: .navigationBar)
             .refreshable { await load() }
             .sheet(isPresented: $showingCreate) {
                 CreatePomodoroView(
@@ -238,6 +223,31 @@ struct MiCuentaView: View {
             }
         }
         .task { await load() }
+    }
+
+    private var header: some View {
+        HStack {
+            Color.clear.frame(width: 48, height: 48)
+            Spacer()
+            HStack(spacing: 8) {
+                Text("🍅")
+                Text("Tomatito").foregroundStyle(.red)
+                Text("Enfocado").foregroundStyle(.primary)
+            }
+            .font(.system(size: 28, weight: .bold))
+            .minimumScaleFactor(0.7)
+            .lineLimit(1)
+            Spacer()
+            Button {
+                showingPerfil = true
+            } label: {
+                ProfileAvatar(url: cuenta?.avatarURL, email: cuenta?.email ?? session.username, size: 48)
+            }
+            .accessibilityLabel("Mi perfil")
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 8)
+        .padding(.bottom, 12)
     }
 
     private func load() async {
