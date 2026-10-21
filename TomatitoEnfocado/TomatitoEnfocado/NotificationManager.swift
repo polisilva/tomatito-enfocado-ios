@@ -192,9 +192,14 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         willPresent notification: UNNotification,
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
-        // Primer plano: el banner se muestra siempre (el alerta "Detener alarma"
-        // de AlarmScheduler puede quedar tapado, p.ej. por una hoja abierta).
+        // Primer plano: las alarmas ya muestran el alerta "Detener alarma" de
+        // AlarmScheduler, así que no se duplica el banner (solo queda en la lista).
+        // Pomodoros y temporizadores sí muestran el banner.
         // Sin .sound: el audio ya lo reproduce SoundPlayer dentro del app.
-        completionHandler([.banner, .list])
+        if notification.request.identifier.hasPrefix("alarma-") {
+            completionHandler([.list])
+        } else {
+            completionHandler([.banner, .list])
+        }
     }
 }
