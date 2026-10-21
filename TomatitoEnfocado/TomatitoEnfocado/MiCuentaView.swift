@@ -29,7 +29,10 @@ struct ProfileAvatar: View {
     var body: some View {
         AsyncImage(url: URL(string: url ?? "") ?? gravatarURL(for: email)) { phase in
             if let image = phase.image {
+                // Recorte desde arriba: en fotos verticales mantiene el rostro entero.
                 image.resizable().scaledToFill()
+                    .frame(width: size, height: size, alignment: .top)
+                    .clipped()
             } else {
                 Image(systemName: "person.crop.circle.fill")
                     .resizable()
