@@ -26,6 +26,11 @@ final class ActiveTimerStore: ObservableObject {
     private var client: APIClient?
     private var ticker: Timer?
     private var resyncTimer: Timer?
+    /// Evita doble toque: un segundo "Detener" o un "Reiniciar" que cae justo
+    /// donde estaba el botón de detener crearía sesiones duplicadas.
+    private var stopping: Set<Int> = []
+    private var starting: Set<Int> = []
+    private var lastStopAt: Date?
 
     var hasActive: Bool { !items.isEmpty }
 
@@ -192,6 +197,9 @@ final class ActiveTimerStore: ObservableObject {
 
     func start(pomodoro: Pomodoro) async {
         guard let client else { return }
+        if let lastStopAt, Date().timeIntervalSince(lastStopAt) < 1.5 { return }
+        guard starting.insert(pomodoro.id).inserted else { return }
+        defer { starting.remove(pomodoro.id) }
         errorMessage = nil
         do {
             struct StartResult: Decodable {
@@ -288,6 +296,9 @@ final class ActiveTimerStore: ObservableObject {
 
     func stop(_ item: ActivePomodoroItem) async {
         guard let client else { return }
+        guard stopping.insert(item.timerId).inserted else { return }
+        defer { stopping.remove(item.timerId) }
+        lastStopAt = Date()
         errorMessage = nil
         do {
             try await client.requestRaw("pomodoros/\(item.pomodoroId)/stop", method: "POST")
