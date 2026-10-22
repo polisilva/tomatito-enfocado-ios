@@ -17,40 +17,7 @@ private extension View {
     }
 }
 
-/// Flechas compactas de subir/bajar pegadas al campo, como el <input type="number">
-/// del sitio web — más discretas que un Stepper normal de SwiftUI.
-private struct CompactStepper: View {
-    @Binding var value: Int
-    var range: ClosedRange<Int>
-
-    var body: some View {
-        VStack(spacing: 0) {
-            Button {
-                if value < range.upperBound { value += 1 }
-            } label: {
-                Image(systemName: "chevron.up")
-                    .font(.system(size: 10, weight: .bold))
-                    .frame(width: 22, height: 15)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            Divider().frame(width: 18)
-            Button {
-                if value > range.lowerBound { value -= 1 }
-            } label: {
-                Image(systemName: "chevron.down")
-                    .font(.system(size: 10, weight: .bold))
-                    .frame(width: 22, height: 15)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-        }
-        .background(Color(.systemGray4))
-        .clipShape(RoundedRectangle(cornerRadius: 5))
-    }
-}
-
-/// Campo numérico editable (se puede tocar y escribir) + CompactStepper al lado.
+/// Campo numérico editable (se puede tocar y escribir) + Stepper nativo de iOS (− / +).
 /// Mantiene su propio texto para no sufrir el problema de SwiftUI donde un
 /// TextField(value:formatter:) se queda en blanco mientras se está borrando.
 private struct MinutesField: View {
@@ -86,8 +53,9 @@ private struct MinutesField: View {
                         value = parsed
                     }
                 }
-            CompactStepper(value: $value, range: range)
             Text("min").foregroundStyle(.secondary)
+            Stepper("", value: $value, in: range)
+                .labelsHidden()
         }
         .onAppear { text = String(value) }
         .onChange(of: value) { _, newValue in
@@ -146,6 +114,14 @@ struct CreatePomodoroView: View {
     @State private var vibration = true
     @State private var isSaving = false
     @State private var errorMessage: String?
+
+    /// Repeticiones como número para el Stepper: 0 = en bucle (texto vacío).
+    private var repetitionsValue: Binding<Int> {
+        Binding(
+            get: { Int(repetitionsText.trimmingCharacters(in: .whitespaces)) ?? 0 },
+            set: { repetitionsText = $0 > 0 ? String($0) : "" }
+        )
+    }
 
     private func populateFromExisting() {
         guard let existing else { return }
@@ -237,11 +213,8 @@ struct CreatePomodoroView: View {
                         .cardFieldStyle()
 
                     VStack(alignment: .leading, spacing: 10) {
-                        HStack {
-                            Text("Cada")
-                            CompactStepper(value: $cycles, range: 1...12)
-                            Text("ciclos → Descanso largo")
-                            Spacer()
+                        Stepper(value: $cycles, in: 1...12) {
+                            Text("Cada \(cycles) ciclos → Descanso largo")
                         }
                         Divider()
                         MinutesField(label: "Descanso largo", value: $longBreak, range: 1...120)
@@ -251,15 +224,15 @@ struct CreatePomodoroView: View {
                     DisclosureGroup(isExpanded: $showingAdvanced) {
                         VStack(alignment: .leading, spacing: 16) {
                             VStack(alignment: .leading, spacing: 4) {
-                                HStack {
-                                    Text("Repetir secuencia")
-                                    Spacer()
-                                    TextField("∞", text: $repetitionsText)
-                                        .keyboardType(.numberPad)
-                                        .multilineTextAlignment(.trailing)
-                                        .frame(width: 60)
+                                Stepper(value: repetitionsValue, in: 0...99) {
+                                    HStack {
+                                        Text("Repetir secuencia")
+                                        Spacer()
+                                        Text(repetitionsValue.wrappedValue == 0 ? "∞" : "\(repetitionsValue.wrappedValue)")
+                                            .foregroundStyle(.secondary)
+                                    }
                                 }
-                                Text("Vacío = en bucle")
+                                Text("∞ = en bucle (baja a 0)")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
