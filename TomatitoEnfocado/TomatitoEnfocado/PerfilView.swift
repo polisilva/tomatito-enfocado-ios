@@ -138,7 +138,7 @@ struct PerfilView: View {
                 } header: {
                     Text("Contraseñas de aplicación")
                 } footer: {
-                    Text("El app usa una de estas para iniciar sesión, no tu contraseña principal. Crea una para cada dispositivo y revoca las que ya no uses.")
+                    Text("Son claves que tu cuenta crea solo para que un app (como este) pueda entrar sin usar tu contraseña normal. Crea una por dispositivo y revoca, deslizando, las que ya no uses.")
                 }
 
                 Section {

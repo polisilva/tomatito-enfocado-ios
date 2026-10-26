@@ -18,6 +18,7 @@ struct LoginView: View {
     @State private var appPassword: String = DevCredentials.appPassword
     @State private var isLoading = false
     @State private var errorMessage: String?
+    @State private var showingHelp = false
 
     var body: some View {
         NavigationStack {
@@ -30,11 +31,25 @@ struct LoginView: View {
                     .pickerStyle(.segmented)
                 }
 
-                Section("Credenciales") {
+                Section {
                     TextField("Usuario de WordPress", text: $username)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
-                    SecureField("Application Password", text: $appPassword)
+                        .padding(.vertical, 8)
+                    SecureField("Contraseña de aplicación", text: $appPassword)
+                        .padding(.vertical, 8)
+                    Button {
+                        showingHelp = true
+                    } label: {
+                        Label("¿Qué es una contraseña de aplicación?", systemImage: "questionmark.circle")
+                            .font(.footnote)
+                    }
+                    .padding(.vertical, 4)
+                } header: {
+                    Text("Credenciales")
+                } footer: {
+                    Text("No es tu contraseña normal: es una clave especial que genera tu cuenta solo para este app.")
+                        .padding(.top, 4)
                 }
 
                 if let errorMessage {
@@ -65,6 +80,7 @@ struct LoginView: View {
                 .listRowBackground(Color.clear)
             }
             .navigationBarTitleDisplayMode(.inline)
+            .sheet(isPresented: $showingHelp) { AppPasswordHelpView() }
             .toolbar {
                 ToolbarItem(placement: .principal) {
                     HStack(spacing: 4) {
@@ -86,6 +102,50 @@ struct LoginView: View {
             try await session.login(baseURL: baseURL, username: username, appPassword: appPassword)
         } catch {
             errorMessage = "No se pudo iniciar sesión: \(error.localizedDescription)"
+        }
+    }
+}
+
+/// Explica qué es una contraseña de aplicación y cómo conseguir una.
+private struct AppPasswordHelpView: View {
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    Text("Contraseña de aplicación")
+                        .font(.title2.bold())
+                    Text("Es una clave que tu cuenta de Tomatito Enfocado crea especialmente para este app. Así el app puede entrar sin que tengas que darle tu contraseña normal, y puedes anularla cuando quieras sin cambiar la principal.")
+
+                    VStack(alignment: .leading, spacing: 14) {
+                        Text("Cómo conseguirla").font(.headline)
+                        step(1, "Entra en la web de Tomatito Enfocado con tu cuenta.")
+                        step(2, "Abre tu perfil y busca «Contraseñas de aplicación».")
+                        step(3, "Escribe un nombre (por ejemplo «Mi iPhone») y pulsa «Crear».")
+                        step(4, "Copia la clave que aparece y pégala aquí. Solo se muestra una vez.")
+                    }
+                }
+                .padding(20)
+            }
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Listo") { dismiss() }
+                }
+            }
+            .navigationBarTitleDisplayMode(.inline)
+        }
+        .presentationDetents([.medium, .large])
+    }
+
+    private func step(_ n: Int, _ text: String) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Text("\(n)")
+                .font(.subheadline.bold())
+                .foregroundStyle(.white)
+                .frame(width: 24, height: 24)
+                .background(Circle().fill(.red))
+            Text(text)
         }
     }
 }

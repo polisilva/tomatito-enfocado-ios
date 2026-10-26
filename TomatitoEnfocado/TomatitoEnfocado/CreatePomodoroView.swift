@@ -11,7 +11,8 @@ private extension View {
     /// Caja redondeada gris clara para cada campo — mismo lenguaje visual
     /// que el mockup de referencia, en vez del Form nativo del sistema.
     func cardFieldStyle() -> some View {
-        self.padding(12)
+        self.padding(.horizontal, 16)
+            .padding(.vertical, 16)
             .background(Color(.systemGray6))
             .clipShape(RoundedRectangle(cornerRadius: 12))
     }
@@ -156,7 +157,7 @@ struct CreatePomodoroView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 14) {
+                VStack(alignment: .leading, spacing: 20) {
                     if existing == nil {
                         HStack {
                             Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
@@ -212,7 +213,7 @@ struct CreatePomodoroView: View {
                     MinutesField(icon: "clock", label: "Descanso corto", value: $shortBreak, range: 1...60)
                         .cardFieldStyle()
 
-                    VStack(alignment: .leading, spacing: 10) {
+                    VStack(alignment: .leading, spacing: 16) {
                         Stepper(value: $cycles, in: 1...12) {
                             Text("Cada \(cycles) ciclos → Descanso largo")
                         }
@@ -295,7 +296,7 @@ struct CreatePomodoroView: View {
                             .font(.footnote)
                     }
                 }
-                .padding()
+                .padding(20)
             }
             .background(Color(.systemGroupedBackground))
             .navigationBarTitleDisplayMode(.inline)
