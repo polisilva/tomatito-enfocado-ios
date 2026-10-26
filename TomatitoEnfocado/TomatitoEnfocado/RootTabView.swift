@@ -33,12 +33,23 @@ private func tomatoTabIcon(pointSize: CGFloat = 27) -> Image {
     return Image(uiImage: uiImage.withRenderingMode(.alwaysOriginal))
 }
 
+/// En iPad el contenido va en una columna centrada y legible, no estirado
+/// de borde a borde. En iPhone (ancho < 720) no cambia nada.
+private extension View {
+    func readableColumn() -> some View {
+        self.frame(maxWidth: 720)
+            .frame(maxWidth: .infinity)
+            .background(Color(.systemGroupedBackground).ignoresSafeArea())
+    }
+}
+
 struct RootTabView: View {
     @State private var selectedTab = 0
 
     var body: some View {
         TabView(selection: $selectedTab) {
             MiCuentaView(selectedTab: $selectedTab)
+                .readableColumn()
                 .tabItem {
                     Label {
                         Text("Inicio")
@@ -49,20 +60,24 @@ struct RootTabView: View {
                 .tag(0)
 
             AhoraMismoView()
+                .readableColumn()
                 .tabItem { Label("Ahora mismo", systemImage: "timer") }
                 .tag(1)
 
             AlarmasView()
+                .readableColumn()
                 .tabItem { Label("Alarmas", systemImage: "alarm") }
                 .tag(2)
 
             TemporizadoresView(selectedTab: $selectedTab)
+                .readableColumn()
                 .tabItem { Label("Temporizadores", systemImage: "hourglass") }
                 .tag(3)
 
             NavigationStack {
                 AjustesView()
             }
+            .readableColumn()
             .tabItem { Label("Ajustes", systemImage: "gearshape") }
             .tag(4)
         }

@@ -113,7 +113,18 @@ struct LoginView: View {
                 }
                 .padding(.horizontal, 24)
                 .padding(.bottom, 32)
+                // En iPad el contenido no se estira por toda la pantalla.
+                .frame(maxWidth: 480)
+                .frame(maxWidth: .infinity)
             }
+            #if DEBUG
+            .task {
+                // Solo desarrollo: `simctl launch ... -autologin` entra con DevCredentials.
+                if ProcessInfo.processInfo.arguments.contains("-autologin"), !username.isEmpty, !appPassword.isEmpty {
+                    await doLogin()
+                }
+            }
+            #endif
             .sheet(isPresented: $showingHelp) { AppPasswordHelpView() }
         }
     }
