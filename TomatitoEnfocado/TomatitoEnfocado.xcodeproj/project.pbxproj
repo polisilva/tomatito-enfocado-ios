@@ -29,6 +29,7 @@
 		BAAE14A065170DF8F9537FD8 /* SoundPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 966D393EE39699B748646C14 /* SoundPlayer.swift */; };
 		0F3542DAE8872B9284FF36FC /* AlarmScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDB3BF5AF1073E33004161FE /* AlarmScheduler.swift */; };
 		7C1FE646B879E22FD4644E8D /* HistorialView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACE13F1948893C8F0E43AF2C /* HistorialView.swift */; };
+		A1B2C3D4E5F60718293A4B5C /* OmkromAuth.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1C2D3E4F5061728394A5B6C /* OmkromAuth.swift */; };
 		EAAE53E3CDDC0E0D84916C8B /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56D05B63757BC6E5BAA4152A /* NotificationManager.swift */; };
 		DCC88F443CAD4608DC334020 /* AjustesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AC14CCB2A5DF09762167DE5 /* AjustesView.swift */; };
 		E6777C4730494BAA00C4512F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E6777C4630494BAA00C4512F /* Assets.xcassets */; };
@@ -60,6 +61,7 @@
 		966D393EE39699B748646C14 /* SoundPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundPlayer.swift; sourceTree = "<group>"; };
 		FDB3BF5AF1073E33004161FE /* AlarmScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmScheduler.swift; sourceTree = "<group>"; };
 		ACE13F1948893C8F0E43AF2C /* HistorialView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistorialView.swift; sourceTree = "<group>"; };
+		B1C2D3E4F5061728394A5B6C /* OmkromAuth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmkromAuth.swift; sourceTree = "<group>"; };
 		56D05B63757BC6E5BAA4152A /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
 		8AC14CCB2A5DF09762167DE5 /* AjustesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AjustesView.swift; sourceTree = "<group>"; };
 		E6777C4630494BAA00C4512F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -120,6 +122,7 @@
 				FDB3BF5AF1073E33004161FE /* AlarmScheduler.swift */,
 				ACE13F1948893C8F0E43AF2C /* HistorialView.swift */,
 				56D05B63757BC6E5BAA4152A /* NotificationManager.swift */,
+				B1C2D3E4F5061728394A5B6C /* OmkromAuth.swift */,
 				8AC14CCB2A5DF09762167DE5 /* AjustesView.swift */,
 				6592930CEC42D5877B074A74 /* Sounds */,
 				E6777C4630494BAA00C4512F /* Assets.xcassets */,
@@ -230,6 +233,7 @@
 				0F3542DAE8872B9284FF36FC /* AlarmScheduler.swift in Sources */,
 				7C1FE646B879E22FD4644E8D /* HistorialView.swift in Sources */,
 				EAAE53E3CDDC0E0D84916C8B /* NotificationManager.swift in Sources */,
+				A1B2C3D4E5F60718293A4B5C /* OmkromAuth.swift in Sources */,
 				DCC88F443CAD4608DC334020 /* AjustesView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
