@@ -196,7 +196,10 @@ struct MiCuentaView: View {
                     }
                 }
             }
+            .frame(maxWidth: 720)
             }
+            .frame(maxWidth: .infinity)
+            .background(Color(.systemGroupedBackground).ignoresSafeArea())
             .toolbar(.hidden, for: .navigationBar)
             .refreshable { await load() }
             .sheet(isPresented: $showingCreate) {
@@ -250,6 +253,8 @@ struct MiCuentaView: View {
         .padding(.horizontal, 16)
         .padding(.top, 8)
         .padding(.bottom, 12)
+        // La faja blanca ocupa todo el ancho (también en iPad), como en iPhone.
+        .background(Color(.systemBackground).ignoresSafeArea(edges: .top))
     }
 
     private func load() async {

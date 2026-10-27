@@ -49,7 +49,6 @@ struct RootTabView: View {
     var body: some View {
         TabView(selection: $selectedTab) {
             MiCuentaView(selectedTab: $selectedTab)
-                .readableColumn()
                 .tabItem {
                     Label {
                         Text("Inicio")
