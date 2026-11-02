@@ -21,6 +21,7 @@ final class SessionStore: ObservableObject {
             username = saved.username
             appPassword = saved.appPassword
             isLoggedIn = true
+            WatchBridge.shared.send(baseURL: baseURL, username: username, appPassword: appPassword)
         }
     }
 
@@ -38,11 +39,13 @@ final class SessionStore: ObservableObject {
         self.username = username
         self.appPassword = appPassword
         KeychainHelper.save(username: username, appPassword: appPassword, baseURL: baseURL)
+        WatchBridge.shared.send(baseURL: baseURL, username: username, appPassword: appPassword)
         self.isLoggedIn = true
     }
 
     func logout() {
         KeychainHelper.clear()
+        WatchBridge.shared.send(baseURL: "", username: "", appPassword: "")
         username = ""
         appPassword = ""
         isLoggedIn = false

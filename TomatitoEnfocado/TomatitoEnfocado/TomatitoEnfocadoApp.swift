@@ -11,6 +11,7 @@ import SwiftUI
 struct TomatitoEnfocadoApp: App {
     init() {
         NotificationManager.shared.setup()
+        WatchBridge.shared.activate()
     }
 
     var body: some Scene {

@@ -92,9 +92,10 @@ struct ActivePomodoroStatus: Decodable {
     var phaseLabel: String
     @FlexibleInt var cycle: Int
     @FlexibleInt var cyclesTotal: Int
-    @FlexibleInt var work: Int
-    @FlexibleInt var shortBreak: Int
-    @FlexibleInt var longBreak: Int
+    // El servidor puede no mandar los minutos de cada fase en /pomodoros/active.
+    @FlexibleOptionalInt var work: Int?
+    @FlexibleOptionalInt var shortBreak: Int?
+    @FlexibleOptionalInt var longBreak: Int?
     @FlexibleInt var autoStart: Int = 1
     @FlexibleInt var pauseOnEnd: Int = 0
 }
