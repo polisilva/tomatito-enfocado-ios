@@ -102,10 +102,8 @@ private struct StartView: View {
             }
             ForEach(store.pomodoros) { pomodoro in
                 Button {
-                    Task {
-                        await store.start(pomodoro)
-                        page = 0
-                    }
+                    page = 0
+                    Task { await store.start(pomodoro) }
                 } label: {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(pomodoro.name).font(.headline)

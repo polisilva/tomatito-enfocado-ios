@@ -110,8 +110,11 @@ final class WatchStore: NSObject, ObservableObject, WCSessionDelegate {
         defer { isLoading = false }
         errorMessage = nil
         do {
-            pomodoros = try await client.request("pomodoros")
-            let status: [ActivePomodoroStatus] = try await client.request("pomodoros/active")
+            async let pomodorosRequest: [Pomodoro] = client.request("pomodoros")
+            async let activeRequest: [ActivePomodoroStatus] = client.request("pomodoros/active")
+            async let alarmasRequest: [UpcomingAlarma]? = try? await client.request("alarmas/upcoming")
+            pomodoros = try await pomodorosRequest
+            let status = try await activeRequest
             active = status.map {
                 WatchActive(
                     timerId: $0.timerId, pomodoroId: $0.pomodoroId, name: $0.name,
@@ -119,8 +122,7 @@ final class WatchStore: NSObject, ObservableObject, WCSessionDelegate {
                     isPaused: $0.state == "paused"
                 )
             }
-            let alarmas: [UpcomingAlarma]? = try? await client.request("alarmas/upcoming")
-            nextAlarma = alarmas?.first
+            nextAlarma = await alarmasRequest?.first
             lastSync = Date()
         } catch {
             errorMessage = error.localizedDescription
@@ -151,8 +153,21 @@ final class WatchStore: NSObject, ObservableObject, WCSessionDelegate {
 
     func start(_ pomodoro: Pomodoro) async {
         guard let client else { return }
-        _ = try? await client.requestRaw("pomodoros/\(pomodoro.id)/start", method: "POST")
-        await refresh()
+        struct StartResult: Decodable {
+            @FlexibleInt var timerId: Int
+            var phase: String
+            @FlexibleInt var duration: Int
+        }
+        // Se muestra al instante con lo que responde /start; la lista completa
+        // se corrige en segundo plano.
+        if let result: StartResult = try? await client.request("pomodoros/\(pomodoro.id)/start", method: "POST") {
+            let label = result.phase == "work" ? "Trabajo" : result.phase
+            active.insert(WatchActive(
+                timerId: result.timerId, pomodoroId: pomodoro.id, name: pomodoro.name,
+                phaseLabel: label, remaining: result.duration, duration: result.duration, isPaused: false
+            ), at: 0)
+        }
+        Task { await refresh() }
     }
 
     func stop(_ item: WatchActive) async {
