@@ -44,7 +44,14 @@ private extension View {
 }
 
 struct RootTabView: View {
-    @State private var selectedTab = 0
+    @State private var selectedTab: Int = {
+        #if DEBUG
+        // Solo desarrollo: `-tab N` abre directamente en esa pestaña (para capturas).
+        let args = ProcessInfo.processInfo.arguments
+        if let i = args.firstIndex(of: "-tab"), i + 1 < args.count, let n = Int(args[i + 1]) { return n }
+        #endif
+        return 0
+    }()
 
     var body: some View {
         TabView(selection: $selectedTab) {
