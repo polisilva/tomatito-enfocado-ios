@@ -45,6 +45,7 @@
 		7A7C00000000000000000016 /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4942CA84ABF2772E4C818737 /* KeychainHelper.swift */; };
 		7A7C00000000000000000018 /* TomatitoWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 7A7C00000000000000000006 /* TomatitoWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		7A7C000000000000000000F1 /* DevCredentials.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEA1A1B97D65B1CC6CA20776 /* DevCredentials.swift */; };
+		7A7C000000000000000000F4 /* WatchTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A7C000000000000000000F5 /* WatchTheme.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -83,6 +84,7 @@
 		7A7C00000000000000000003 /* WatchRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchRootView.swift; sourceTree = "<group>"; };
 		7A7C00000000000000000004 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		7A7C00000000000000000006 /* TomatitoWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TomatitoWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		7A7C000000000000000000F5 /* WatchTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchTheme.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -171,6 +173,7 @@
 				7A7C00000000000000000001 /* TomatitoWatchApp.swift */,
 				7A7C00000000000000000002 /* WatchStore.swift */,
 				7A7C00000000000000000003 /* WatchRootView.swift */,
+				7A7C000000000000000000F5 /* WatchTheme.swift */,
 				7A7C00000000000000000004 /* Assets.xcassets */,
 			);
 			path = TomatitoWatch;
@@ -346,6 +349,7 @@
 				7A7C00000000000000000010 /* TomatitoWatchApp.swift in Sources */,
 				7A7C00000000000000000011 /* WatchStore.swift in Sources */,
 				7A7C00000000000000000012 /* WatchRootView.swift in Sources */,
+				7A7C000000000000000000F4 /* WatchTheme.swift in Sources */,
 				7A7C00000000000000000014 /* APIClient.swift in Sources */,
 				7A7C00000000000000000015 /* Models.swift in Sources */,
 				7A7C00000000000000000016 /* KeychainHelper.swift in Sources */,

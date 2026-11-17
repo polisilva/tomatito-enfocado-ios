@@ -14,6 +14,7 @@ struct WatchActive: Identifiable {
     let timerId: Int
     let pomodoroId: Int
     var name: String
+    var phase: String
     var phaseLabel: String
     var remaining: Int
     var duration: Int
@@ -32,8 +33,19 @@ final class WatchStore: NSObject, ObservableObject, WCSessionDelegate {
     @Published var pomodoros: [Pomodoro] = []
     @Published var active: [WatchActive] = []
     @Published var nextAlarma: UpcomingAlarma?
+    @Published var todayMinutes = 0
+    @Published var todayCompleted = 0
+    /// Meta diaria de foco (min) para los anillos de "Hoy".
+    let goalMinutes = 100
     @Published var errorMessage: String?
     @Published var isLoading = false
+
+    private static let isoDay: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.dateFormat = "yyyy-MM-dd"
+        return f
+    }()
 
     private var client: APIClient?
     private var ticker: Timer?
@@ -113,16 +125,22 @@ final class WatchStore: NSObject, ObservableObject, WCSessionDelegate {
             async let pomodorosRequest: [Pomodoro] = client.request("pomodoros")
             async let activeRequest: [ActivePomodoroStatus] = client.request("pomodoros/active")
             async let alarmasRequest: [UpcomingAlarma]? = try? await client.request("alarmas/upcoming")
+            let day = Self.isoDay.string(from: Date())
+            async let todayRequest: HistorialPage? = try? await client.requestFull("history-sesiones?date_from=\(day)&date_to=\(day)&per_page=1")
             pomodoros = try await pomodorosRequest
             let status = try await activeRequest
             active = status.map {
                 WatchActive(
                     timerId: $0.timerId, pomodoroId: $0.pomodoroId, name: $0.name,
-                    phaseLabel: $0.phaseLabel, remaining: $0.remaining, duration: $0.duration,
+                    phase: $0.phase, phaseLabel: $0.phaseLabel, remaining: $0.remaining, duration: $0.duration,
                     isPaused: $0.state == "paused"
                 )
             }
             nextAlarma = await alarmasRequest?.first
+            if let today = await todayRequest {
+                todayMinutes = today.summary.minutos
+                todayCompleted = today.summary.completadas
+            }
             lastSync = Date()
         } catch {
             errorMessage = error.localizedDescription
@@ -164,7 +182,7 @@ final class WatchStore: NSObject, ObservableObject, WCSessionDelegate {
             let label = result.phase == "work" ? "Trabajo" : result.phase
             active.insert(WatchActive(
                 timerId: result.timerId, pomodoroId: pomodoro.id, name: pomodoro.name,
-                phaseLabel: label, remaining: result.duration, duration: result.duration, isPaused: false
+                phase: result.phase, phaseLabel: label, remaining: result.duration, duration: result.duration, isPaused: false
             ), at: 0)
         }
         Task { await refresh() }
