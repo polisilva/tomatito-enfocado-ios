@@ -58,18 +58,27 @@ struct MiCuentaView: View {
     @State private var nextAlarma: UpcomingAlarma?
     @State private var showingPerfil = false
     @ObservedObject private var ajustes = AjustesStore.shared
+    @AppStorage("meta_diaria_min") private var metaDiariaMin = 100
+    @State private var todayMinutes = 0
+    @State private var todayCompleted = 0
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
             header
             List {
+                Section {
+                    ActivitySummaryCard(minutes: todayMinutes, completed: todayCompleted, goalMinutes: metaDiariaMin)
+                }
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+
                 Section("Pomodoros guardados") {
                     if isLoading && pomodoros.isEmpty {
                         ProgressView()
                     } else if let errorMessage {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text(errorMessage).foregroundStyle(.red).font(.footnote)
+                            Text(errorMessage).foregroundStyle(Color.fitRed).font(.footnote)
                             Button("Reintentar") { Task { await load() } }
                         }
                     } else if pomodoros.isEmpty {
@@ -87,7 +96,7 @@ struct MiCuentaView: View {
                                 } label: {
                                     HStack(spacing: 12) {
                                         ZStack {
-                                            Circle().fill(Color.red.opacity(0.12))
+                                            Circle().fill(Color.fitRed.opacity(0.12))
                                             Text("🍅").font(.system(size: 18))
                                         }
                                         .frame(width: 36, height: 36)
@@ -127,7 +136,7 @@ struct MiCuentaView: View {
                                 } label: {
                                     Image(systemName: "play.circle.fill")
                                         .font(.title2)
-                                        .foregroundStyle(.red)
+                                        .foregroundStyle(Color.fitRed)
                                 }
                                 .buttonStyle(.plain)
                             }
@@ -168,7 +177,7 @@ struct MiCuentaView: View {
                             .padding(.vertical, 4)
                     }
                     .buttonStyle(.borderedProminent)
-                    .tint(.red)
+                    .tint(Color.fitRed)
                     .listRowInsets(EdgeInsets())
                 }
                 .listRowBackground(Color.clear)
@@ -199,7 +208,7 @@ struct MiCuentaView: View {
             .frame(maxWidth: 720)
             }
             .frame(maxWidth: .infinity)
-            .background(Color(.systemGroupedBackground).ignoresSafeArea())
+            .background(Color.fitBackground.ignoresSafeArea())
             .toolbar(.hidden, for: .navigationBar)
             .refreshable { await load() }
             .sheet(isPresented: $showingCreate) {
@@ -235,7 +244,7 @@ struct MiCuentaView: View {
         HStack(spacing: 12) {
             HStack(spacing: 6) {
                 Text("🍅")
-                Text("Tomatito").foregroundStyle(.red)
+                Text("Tomatito").foregroundStyle(Color.fitRed)
                 Text("Enfocado").foregroundStyle(.primary)
             }
             .font(.system(size: 24, weight: .bold))
@@ -257,6 +266,13 @@ struct MiCuentaView: View {
         .background(Color(.systemBackground).ignoresSafeArea(edges: .top))
     }
 
+    private static let isoDay: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.dateFormat = "yyyy-MM-dd"
+        return f
+    }()
+
     private func load() async {
         errorMessage = nil
         isLoading = true
@@ -267,6 +283,11 @@ struct MiCuentaView: View {
             errorMessage = error.localizedDescription
         }
         cuenta = try? await session.client.request("mi-cuenta")
+        let day = Self.isoDay.string(from: Date())
+        if let page: HistorialPage = try? await session.client.requestFull("history-sesiones?date_from=\(day)&date_to=\(day)&per_page=1") {
+            todayMinutes = page.summary.minutos
+            todayCompleted = page.summary.completadas
+        }
         let alarmas: [UpcomingAlarma]? = try? await session.client.request("alarmas/upcoming")
         nextAlarma = alarmas?.first
     }

@@ -67,7 +67,7 @@ struct PerfilView: View {
                                 Image(systemName: "pencil.circle.fill")
                                     .font(.system(size: 26))
                                     .symbolRenderingMode(.palette)
-                                    .foregroundStyle(.white, .red)
+                                    .foregroundStyle(.white, Color.fitRed)
                                     .background(Circle().fill(.white))
                             }
                             .disabled(isUploadingAvatar)
@@ -77,7 +77,7 @@ struct PerfilView: View {
                         Text(perfil?.email ?? session.username).font(.footnote).foregroundStyle(.secondary)
 
                         if let avatarErrorMessage {
-                            Text(avatarErrorMessage).font(.caption).foregroundStyle(.red)
+                            Text(avatarErrorMessage).font(.caption).foregroundStyle(Color.fitRed)
                         }
                     }
                     .frame(maxWidth: .infinity)
@@ -97,7 +97,7 @@ struct PerfilView: View {
                         ProgressView()
                     } else if let errorMessage {
                         VStack(alignment: .leading, spacing: 6) {
-                            Text(errorMessage).foregroundStyle(.red).font(.footnote)
+                            Text(errorMessage).foregroundStyle(Color.fitRed).font(.footnote)
                             Button("Reintentar") { Task { await load() } }
                         }
                     }
@@ -182,7 +182,7 @@ struct PerfilView: View {
                             .padding()
                             .frame(maxWidth: .infinity)
                             .background(Color(.systemGray6))
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                            .clipShape(RoundedRectangle(cornerRadius: fitCornerRadius, style: .continuous))
                             .textSelection(.enabled)
                         Button {
                             UIPasteboard.general.string = created.password
@@ -191,7 +191,7 @@ struct PerfilView: View {
                                 .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(.borderedProminent)
-                        .tint(.red)
+                        .tint(Color.fitRed)
                     }
                     .padding()
                     .navigationBarTitleDisplayMode(.inline)

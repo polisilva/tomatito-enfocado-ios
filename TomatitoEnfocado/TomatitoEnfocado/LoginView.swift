@@ -33,7 +33,7 @@ struct LoginView: View {
                             .scaledToFit()
                             .frame(width: 96, height: 96)
                         HStack(spacing: 6) {
-                            Text("Tomatito").foregroundStyle(.red)
+                            Text("Tomatito").foregroundStyle(Color.fitRed)
                             Text("Enfocado").foregroundStyle(.primary)
                         }
                         .font(.system(size: 30, weight: .bold))
@@ -59,13 +59,13 @@ struct LoginView: View {
                         .padding(.vertical, 8)
                     }
                     .buttonStyle(.borderedProminent)
-                    .tint(.red)
+                    .tint(Color.fitRed)
                     .controlSize(.large)
                     .disabled(isLoading)
 
                     if let errorMessage {
                         Text(errorMessage)
-                            .foregroundStyle(.red)
+                            .foregroundStyle(Color.fitRed)
                             .font(.footnote)
                             .multilineTextAlignment(.center)
                     }
@@ -83,11 +83,11 @@ struct LoginView: View {
                                 .autocorrectionDisabled()
                                 .padding(14)
                                 .background(Color(.systemGray6))
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .clipShape(RoundedRectangle(cornerRadius: fitCornerRadius, style: .continuous))
                             SecureField("Contraseña de aplicación", text: $appPassword)
                                 .padding(14)
                                 .background(Color(.systemGray6))
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .clipShape(RoundedRectangle(cornerRadius: fitCornerRadius, style: .continuous))
 
                             Button {
                                 showingHelp = true
@@ -196,7 +196,7 @@ private struct AppPasswordHelpView: View {
                 .font(.subheadline.bold())
                 .foregroundStyle(.white)
                 .frame(width: 24, height: 24)
-                .background(Circle().fill(.red))
+                .background(Circle().fill(Color.fitRed))
             Text(text)
         }
     }

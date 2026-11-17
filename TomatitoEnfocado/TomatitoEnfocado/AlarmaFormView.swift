@@ -97,7 +97,7 @@ struct AlarmaFormView: View {
                                 } label: {
                                     Text(day.label)
                                         .frame(width: 32, height: 32)
-                                        .background(days.contains(day.key) ? Color.red : Color.gray.opacity(0.15))
+                                        .background(days.contains(day.key) ? Color.fitRed : Color.gray.opacity(0.15))
                                         .foregroundStyle(days.contains(day.key) ? .white : .primary)
                                         .clipShape(Circle())
                                 }
@@ -143,7 +143,7 @@ struct AlarmaFormView: View {
 
                 if let errorMessage {
                     Text(errorMessage)
-                        .foregroundStyle(.red)
+                        .foregroundStyle(Color.fitRed)
                         .font(.footnote)
                 }
             }

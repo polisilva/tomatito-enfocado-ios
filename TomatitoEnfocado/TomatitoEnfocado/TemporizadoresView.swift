@@ -26,7 +26,7 @@ struct TemporizadoresView: View {
                     ProgressView("Cargando...")
                 } else if let errorMessage {
                     VStack(spacing: 12) {
-                        Text(errorMessage).foregroundStyle(.red)
+                        Text(errorMessage).foregroundStyle(Color.fitRed)
                         Button("Reintentar") { Task { await load() } }
                     }
                 } else {
@@ -52,10 +52,10 @@ struct TemporizadoresView: View {
                                     } label: {
                                         HStack(spacing: 12) {
                                             ZStack {
-                                                Circle().fill(Color.red.opacity(0.12))
+                                                Circle().fill(Color.fitRed.opacity(0.12))
                                                 Image(systemName: "hourglass")
                                                     .font(.system(size: 16))
-                                                    .foregroundStyle(.red)
+                                                    .foregroundStyle(Color.fitRed)
                                             }
                                             .frame(width: 36, height: 36)
 
@@ -94,7 +94,7 @@ struct TemporizadoresView: View {
                                     } label: {
                                         Image(systemName: "play.circle.fill")
                                             .font(.title2)
-                                            .foregroundStyle(.red)
+                                            .foregroundStyle(Color.fitRed)
                                     }
                                     .buttonStyle(.plain)
                                 }
@@ -137,7 +137,7 @@ struct TemporizadoresView: View {
                                     .padding(.vertical, 4)
                             }
                             .buttonStyle(.borderedProminent)
-                            .tint(.red)
+                            .tint(Color.fitRed)
                             .listRowInsets(EdgeInsets())
                         }
                         .listRowBackground(Color.clear)

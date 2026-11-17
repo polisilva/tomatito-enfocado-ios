@@ -14,7 +14,7 @@ private extension View {
         self.padding(.horizontal, 16)
             .padding(.vertical, 16)
             .background(Color(.systemGray6))
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .clipShape(RoundedRectangle(cornerRadius: fitCornerRadius, style: .continuous))
     }
 }
 
@@ -74,7 +74,7 @@ private struct CheckboxRow: View {
         Button { isOn.toggle() } label: {
             HStack(spacing: 10) {
                 Image(systemName: isOn ? "checkmark.square.fill" : "square")
-                    .foregroundStyle(isOn ? .red : .secondary)
+                    .foregroundStyle(isOn ? Color.fitRed : Color.secondary)
                 Text(label).foregroundStyle(.primary)
                 Spacer()
             }
@@ -189,7 +189,7 @@ struct CreatePomodoroView: View {
                                             }
                                             Spacer()
                                             Image(systemName: "play.circle.fill")
-                                                .foregroundStyle(.red)
+                                                .foregroundStyle(Color.fitRed)
                                         }
                                         .padding(12)
                                     }
@@ -198,7 +198,7 @@ struct CreatePomodoroView: View {
                                 }
                             }
                             .background(Color(.systemGray6))
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .clipShape(RoundedRectangle(cornerRadius: fitCornerRadius, style: .continuous))
                         }
                     }
 
@@ -273,7 +273,7 @@ struct CreatePomodoroView: View {
                             .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(.borderedProminent)
-                        .tint(.red)
+                        .tint(Color.fitRed)
                         .foregroundStyle(.white)
                         .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty || isSaving)
 
@@ -292,13 +292,13 @@ struct CreatePomodoroView: View {
 
                     if let errorMessage {
                         Text(errorMessage)
-                            .foregroundStyle(.red)
+                            .foregroundStyle(Color.fitRed)
                             .font(.footnote)
                     }
                 }
                 .padding(20)
             }
-            .background(Color(.systemGroupedBackground))
+            .background(Color.fitBackground)
             .navigationBarTitleDisplayMode(.inline)
             .onAppear { populateFromExisting() }
         }

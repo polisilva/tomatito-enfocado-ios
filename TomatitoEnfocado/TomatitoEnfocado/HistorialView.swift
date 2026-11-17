@@ -119,7 +119,7 @@ struct HistorialView: View {
             Section {
                 if let errorMessage {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text(errorMessage).foregroundStyle(.red).font(.footnote)
+                        Text(errorMessage).foregroundStyle(Color.fitRed).font(.footnote)
                         Button("Reintentar") { reload() }
                     }
                 } else if isLoading && result == nil {
@@ -198,12 +198,12 @@ struct HistorialView: View {
             Text(label).font(.caption).foregroundStyle(.secondary)
             Text(value)
                 .font(.title2.bold())
-                .foregroundStyle(accent ? Color.red : Color.primary)
+                .foregroundStyle(accent ? Color.fitRed : Color.primary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .background(Color.fitCard)
+        .clipShape(RoundedRectangle(cornerRadius: fitCornerRadius, style: .continuous))
     }
 
     private func row(_ sesion: SesionHistorial) -> some View {
@@ -228,7 +228,7 @@ struct HistorialView: View {
     private func color(for state: String) -> Color {
         switch state {
         case "completed": return .green
-        case "cancelled": return .red
+        case "cancelled": return Color.fitRed
         default: return .orange
         }
     }

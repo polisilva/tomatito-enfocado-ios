@@ -56,7 +56,7 @@ struct CreateTemporizadorView: View {
                     }
                 }
                 if let errorMessage {
-                    Text(errorMessage).foregroundStyle(.red).font(.footnote)
+                    Text(errorMessage).foregroundStyle(Color.fitRed).font(.footnote)
                 }
             }
             .navigationTitle(existing == nil ? "Nuevo temporizador" : "Editar temporizador")
