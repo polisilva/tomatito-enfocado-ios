@@ -37,10 +37,6 @@ struct ContentView: View {
         .environmentObject(activeTimer)
         .environmentObject(activeTemporizadores)
         .environmentObject(alarmScheduler)
-        // Estilo Fitness: tipografía redondeada, color de marca y encabezados de sección grandes.
-        .fontDesign(.rounded)
-        .tint(Color.fitRed)
-        .headerProminence(.increased)
         // Tema de Ajustes; "auto" (nil) sigue el modo del dispositivo.
         .preferredColorScheme(ajustes.tema == "oscuro" ? .dark : (ajustes.tema == "claro" ? .light : nil))
         .onAppear {

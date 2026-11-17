@@ -33,15 +33,10 @@ final class AjustesStore: ObservableObject {
     // Se parte de lo último conocido (UserDefaults) para que el tema y los
     // sonidos sean correctos desde el arranque, antes de que llegue la red.
     // Los valores por defecto son los mismos que usa el servidor.
-    /// Si ya había un tema guardado en este dispositivo. Si no (primer arranque),
-    /// el tema por defecto del app es el oscuro, como Fitness.
-    private var hadSavedTema: Bool
-
     private init() {
         let saved = UserDefaults.standard.dictionary(forKey: Self.key) as? [String: String] ?? [:]
-        hadSavedTema = saved["tema"] != nil
         hora = saved["hora"] ?? "24h"
-        tema = saved["tema"] ?? "oscuro"
+        tema = saved["tema"] ?? "claro"
         notificaciones = saved["notificaciones"] ?? "on"
         sonidoPomodoro = saved["sonidoPomodoro"] ?? "clasico"
         sonidoTemporizador = saved["sonidoTemporizador"] ?? "digital"
@@ -60,15 +55,11 @@ final class AjustesStore: ObservableObject {
     func load(client: APIClient) async {
         guard let remote: AjustesInfo = try? await client.request("ajustes") else { return }
         hora = remote.hora
-        // Primer arranque: se conserva el oscuro por defecto y se guarda en el servidor.
-        let firstRun = !hadSavedTema
-        if !firstRun { tema = remote.tema }
-        hadSavedTema = true
+        tema = remote.tema
         notificaciones = remote.notificaciones
         sonidoPomodoro = remote.sonidoPomodoro
         sonidoTemporizador = remote.sonidoTemporizador
         sonidoAlarma = remote.sonidoAlarma
-        if firstRun { await save(client: client) }
     }
 
     @MainActor
@@ -99,7 +90,6 @@ struct AjustesView: View {
     @EnvironmentObject var activeTemporizadores: ActiveTemporizadoresStore
     @EnvironmentObject var alarmScheduler: AlarmScheduler
     @ObservedObject private var ajustes = AjustesStore.shared
-    @AppStorage("meta_diaria_min") private var metaDiariaMin = 100
     @State private var cuenta: CuentaInfo?
     @State private var showingPerfil = false
 
@@ -157,20 +147,6 @@ struct AjustesView: View {
             }
 
             Section {
-                Stepper(value: $metaDiariaMin, in: 25...480, step: 25) {
-                    HStack {
-                        Text("Meta de foco")
-                        Spacer()
-                        Text("\(metaDiariaMin) min").foregroundStyle(.secondary)
-                    }
-                }
-            } header: {
-                Text("Meta diaria")
-            } footer: {
-                Text("Los anillos de Inicio se llenan con los minutos de foco que completes cada día.")
-            }
-
-            Section {
                 Toggle("Notificaciones", isOn: Binding(
                     get: { ajustes.notificacionesActivas },
                     set: { ajustes.notificaciones = $0 ? "on" : "off" }
@@ -211,7 +187,7 @@ struct AjustesView: View {
             Button {
                 SoundPlayer.play(selection.wrappedValue, defaultSound: selection.wrappedValue)
             } label: {
-                Image(systemName: "play.circle.fill").font(.title3).foregroundStyle(Color.fitRed)
+                Image(systemName: "play.circle.fill").font(.title3).foregroundStyle(.red)
             }
             .buttonStyle(.borderless)
         }

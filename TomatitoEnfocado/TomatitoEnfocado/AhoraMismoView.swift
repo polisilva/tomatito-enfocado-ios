@@ -17,7 +17,7 @@ func timeString(_ seconds: Int) -> String {
 struct CircularTimerRing: View {
     var progress: Double
     var track: Color = Color.gray.opacity(0.15)
-    var fill: Color = .fitRed
+    var fill: Color = .red
 
     var body: some View {
         ZStack {
@@ -72,7 +72,7 @@ struct AhoraMismoView: View {
 
                         if let errorMessage = activeTimer.errorMessage {
                             Text(errorMessage)
-                                .foregroundStyle(Color.fitRed)
+                                .foregroundStyle(.red)
                                 .font(.footnote)
                         }
                     }
@@ -91,10 +91,10 @@ struct AhoraMismoView: View {
                                     if index > 0 { Divider().padding(.leading) }
                                     HStack(spacing: 12) {
                                         ZStack {
-                                            Circle().fill(Color.fitRed.opacity(0.12))
+                                            Circle().fill(Color.red.opacity(0.12))
                                             Image(systemName: "hourglass")
                                                 .font(.system(size: 14))
-                                                .foregroundStyle(Color.fitRed)
+                                                .foregroundStyle(.red)
                                         }
                                         .frame(width: 32, height: 32)
 
@@ -135,8 +135,8 @@ struct AhoraMismoView: View {
                                 }
                             }
                         }
-                        .background(Color.fitCard)
-                        .clipShape(RoundedRectangle(cornerRadius: fitCornerRadius, style: .continuous))
+                        .background(Color(.secondarySystemGroupedBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal)
@@ -168,8 +168,8 @@ struct AhoraMismoView: View {
                                 }
                             }
                         }
-                        .background(Color.fitCard)
-                        .clipShape(RoundedRectangle(cornerRadius: fitCornerRadius, style: .continuous))
+                        .background(Color(.secondarySystemGroupedBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal)
@@ -209,8 +209,8 @@ struct AhoraMismoView: View {
                                 }
                             }
                         }
-                        .background(Color.fitCard)
-                        .clipShape(RoundedRectangle(cornerRadius: fitCornerRadius, style: .continuous))
+                        .background(Color(.secondarySystemGroupedBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal)
@@ -218,7 +218,7 @@ struct AhoraMismoView: View {
                 .padding(.top, 8)
                 .padding(.bottom, 48)
             }
-            .background(Color.fitBackground)
+            .background(Color(.systemGroupedBackground))
             .navigationTitle("Ahora mismo")
             .task { await loadUpcomingAlarmas() }
             .task { await loadHistorial() }
@@ -279,7 +279,7 @@ struct AhoraMismoView: View {
     private func historialColor(_ state: String) -> Color {
         switch state {
         case "completed": return .green
-        case "cancelled": return Color.fitRed
+        case "cancelled": return .red
         default: return .orange
         }
     }
@@ -379,9 +379,12 @@ struct IdlePomodoroCard: View {
                 .background(Color.black.opacity(0.12))
         }
         .background(
-            LinearGradient.fitRed
+            LinearGradient(
+                colors: [Color(red: 1.0, green: 0.41, blue: 0.41), Color(red: 0.95, green: 0.28, blue: 0.32)],
+                startPoint: .topLeading, endPoint: .bottomTrailing
+            )
         )
-        .clipShape(RoundedRectangle(cornerRadius: fitCornerRadius, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
         .shadow(color: .black.opacity(0.12), radius: 10, y: 5)
     }
 }
@@ -445,8 +448,8 @@ struct PomodoroSwitcherList: View {
                     .padding()
                 }
             }
-            .background(Color.fitCard)
-            .clipShape(RoundedRectangle(cornerRadius: fitCornerRadius, style: .continuous))
+            .background(Color(.secondarySystemGroupedBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 16))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -517,7 +520,7 @@ struct ActivePomodoroCard: View {
                         }
                         .buttonStyle(.borderedProminent)
                         .tint(.white)
-                        .foregroundStyle(Color.fitRed)
+                        .foregroundStyle(Color(red: 0.95, green: 0.28, blue: 0.32))
                     }
                 } else {
                     HStack(spacing: 16) {
@@ -539,9 +542,12 @@ struct ActivePomodoroCard: View {
         .padding()
         .frame(maxWidth: .infinity)
         .background(
-            LinearGradient.fitRed
+            LinearGradient(
+                colors: [Color(red: 1.0, green: 0.41, blue: 0.41), Color(red: 0.95, green: 0.28, blue: 0.32)],
+                startPoint: .topLeading, endPoint: .bottomTrailing
+            )
         )
-        .clipShape(RoundedRectangle(cornerRadius: fitCornerRadius, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
         .shadow(color: .black.opacity(0.12), radius: 10, y: 5)
     }
 }

@@ -45,7 +45,6 @@
 		7A7C00000000000000000016 /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4942CA84ABF2772E4C818737 /* KeychainHelper.swift */; };
 		7A7C00000000000000000018 /* TomatitoWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 7A7C00000000000000000006 /* TomatitoWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		7A7C000000000000000000F1 /* DevCredentials.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEA1A1B97D65B1CC6CA20776 /* DevCredentials.swift */; };
-		7A7C000000000000000000F2 /* FitnessTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A7C000000000000000000F3 /* FitnessTheme.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -84,7 +83,6 @@
 		7A7C00000000000000000003 /* WatchRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchRootView.swift; sourceTree = "<group>"; };
 		7A7C00000000000000000004 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		7A7C00000000000000000006 /* TomatitoWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TomatitoWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		7A7C000000000000000000F3 /* FitnessTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FitnessTheme.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -150,7 +148,6 @@
 				ACE13F1948893C8F0E43AF2C /* HistorialView.swift */,
 				56D05B63757BC6E5BAA4152A /* NotificationManager.swift */,
 				B1C2D3E4F5061728394A5B6C /* OmkromAuth.swift */,
-				7A7C000000000000000000F3 /* FitnessTheme.swift */,
 				7A7C0000000000000000000E /* WatchBridge.swift */,
 				8AC14CCB2A5DF09762167DE5 /* AjustesView.swift */,
 				6592930CEC42D5877B074A74 /* Sounds */,
@@ -337,7 +334,6 @@
 				7C1FE646B879E22FD4644E8D /* HistorialView.swift in Sources */,
 				EAAE53E3CDDC0E0D84916C8B /* NotificationManager.swift in Sources */,
 				A1B2C3D4E5F60718293A4B5C /* OmkromAuth.swift in Sources */,
-				7A7C000000000000000000F2 /* FitnessTheme.swift in Sources */,
 				7A7C0000000000000000000F /* WatchBridge.swift in Sources */,
 				DCC88F443CAD4608DC334020 /* AjustesView.swift in Sources */,
 			);

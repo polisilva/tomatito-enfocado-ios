@@ -39,7 +39,7 @@ private extension View {
     func readableColumn() -> some View {
         self.frame(maxWidth: 720)
             .frame(maxWidth: .infinity)
-            .background(Color.fitBackground.ignoresSafeArea())
+            .background(Color(.systemGroupedBackground).ignoresSafeArea())
     }
 }
 
