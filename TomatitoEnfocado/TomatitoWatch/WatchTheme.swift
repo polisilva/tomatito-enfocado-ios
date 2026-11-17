@@ -37,6 +37,8 @@ struct ActivityRings: View {
                     .padding(inset)
             }
         }
+        // El trazo se dibuja centrado en el borde: este margen evita que se corte.
+        .padding(lineWidth / 2)
     }
 }
 
@@ -49,9 +51,9 @@ struct RoundControl: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: systemName)
-                .font(.system(size: 20, weight: .bold))
+                .font(.system(size: 18, weight: .bold))
                 .foregroundStyle(color)
-                .frame(width: 52, height: 52)
+                .frame(width: 44, height: 44)
                 .background(color.opacity(0.25), in: Circle())
         }
         .buttonStyle(.plain)

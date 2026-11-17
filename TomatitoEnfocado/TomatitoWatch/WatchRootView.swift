@@ -79,20 +79,20 @@ private struct NowView: View {
                 VStack(spacing: 14) {
                     ForEach(store.active) { item in
                         let color = phaseColor(item.phase)
-                        VStack(spacing: 6) {
+                        VStack(spacing: 4) {
                             ZStack {
-                                ActivityRings(rings: [.init(progress: item.progress, color: color)], lineWidth: 12)
+                                ActivityRings(rings: [.init(progress: item.progress, color: color)], lineWidth: 10)
                                 VStack(spacing: 0) {
                                     Text(clock(item.remaining))
-                                        .font(.system(size: 34, weight: .semibold, design: .rounded))
+                                        .font(.system(size: 28, weight: .semibold, design: .rounded))
                                         .monospacedDigit()
                                     Text(item.isPaused ? "En pausa" : item.phaseLabel)
                                         .font(.caption2.weight(.semibold))
                                         .foregroundStyle(color)
                                 }
                             }
-                            .frame(width: 140, height: 140)
-                            Text(item.name).font(.footnote).foregroundStyle(.secondary).lineLimit(1)
+                            .frame(width: 108, height: 108)
+                            Text(item.name).font(.caption).foregroundStyle(.secondary).lineLimit(1)
                             HStack(spacing: 14) {
                                 RoundControl(systemName: item.isPaused ? "play.fill" : "pause.fill", color: .yellow) {
                                     Task { await store.togglePause(item) }
