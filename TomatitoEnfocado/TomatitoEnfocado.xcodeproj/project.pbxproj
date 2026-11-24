@@ -18,7 +18,7 @@
 		C3AB277A738AB41300223CB2 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDD14FC181BE7B3758166C8D /* LoginView.swift */; };
 		1265B857421ACA89FCB351FE /* DevCredentials.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEA1A1B97D65B1CC6CA20776 /* DevCredentials.swift */; };
 		75CF5EC9305D05489D38DEF5 /* RootTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E42D473D0DDBF0D362B59BC4 /* RootTabView.swift */; };
-		D0B5F297BFDDE1DB281E36C2 /* MiCuentaView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD8398FD881B96397C9B62F0 /* MiCuentaView.swift */; };
+		D0B5F297BFDDE1DB281E36C2 /* ProfileAvatar.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD8398FD881B96397C9B62F0 /* ProfileAvatar.swift */; };
 		DE7BAEE41A72F193046C3164 /* CreatePomodoroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FFCD9FF353F667571527332 /* CreatePomodoroView.swift */; };
 		F6D787E8D38571DD6DB4D346 /* AhoraMismoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8629318B51E184A18B8E01DF /* AhoraMismoView.swift */; };
 		0E6EE84E82B90982348E3A33 /* AlarmasView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43127C7855965F0FF318D2D7 /* AlarmasView.swift */; };
@@ -46,6 +46,7 @@
 		7A7C00000000000000000018 /* TomatitoWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 7A7C00000000000000000006 /* TomatitoWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		7A7C000000000000000000F1 /* DevCredentials.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEA1A1B97D65B1CC6CA20776 /* DevCredentials.swift */; };
 		7A7C000000000000000000F4 /* WatchTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A7C000000000000000000F5 /* WatchTheme.swift */; };
+		7A7C000000000000000000F6 /* PomodorosView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A7C000000000000000000F7 /* PomodorosView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -61,7 +62,7 @@
 		EDD14FC181BE7B3758166C8D /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		DEA1A1B97D65B1CC6CA20776 /* DevCredentials.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevCredentials.swift; sourceTree = "<group>"; };
 		E42D473D0DDBF0D362B59BC4 /* RootTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootTabView.swift; sourceTree = "<group>"; };
-		DD8398FD881B96397C9B62F0 /* MiCuentaView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiCuentaView.swift; sourceTree = "<group>"; };
+		DD8398FD881B96397C9B62F0 /* ProfileAvatar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileAvatar.swift; sourceTree = "<group>"; };
 		5FFCD9FF353F667571527332 /* CreatePomodoroView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatePomodoroView.swift; sourceTree = "<group>"; };
 		8629318B51E184A18B8E01DF /* AhoraMismoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AhoraMismoView.swift; sourceTree = "<group>"; };
 		43127C7855965F0FF318D2D7 /* AlarmasView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmasView.swift; sourceTree = "<group>"; };
@@ -85,6 +86,7 @@
 		7A7C00000000000000000004 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		7A7C00000000000000000006 /* TomatitoWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TomatitoWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7A7C000000000000000000F5 /* WatchTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchTheme.swift; sourceTree = "<group>"; };
+		7A7C000000000000000000F7 /* PomodorosView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PomodorosView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -137,7 +139,7 @@
 				EDD14FC181BE7B3758166C8D /* LoginView.swift */,
 				DEA1A1B97D65B1CC6CA20776 /* DevCredentials.swift */,
 				E42D473D0DDBF0D362B59BC4 /* RootTabView.swift */,
-				DD8398FD881B96397C9B62F0 /* MiCuentaView.swift */,
+				DD8398FD881B96397C9B62F0 /* ProfileAvatar.swift */,
 				5FFCD9FF353F667571527332 /* CreatePomodoroView.swift */,
 				8629318B51E184A18B8E01DF /* AhoraMismoView.swift */,
 				43127C7855965F0FF318D2D7 /* AlarmasView.swift */,
@@ -150,6 +152,7 @@
 				ACE13F1948893C8F0E43AF2C /* HistorialView.swift */,
 				56D05B63757BC6E5BAA4152A /* NotificationManager.swift */,
 				B1C2D3E4F5061728394A5B6C /* OmkromAuth.swift */,
+				7A7C000000000000000000F7 /* PomodorosView.swift */,
 				7A7C0000000000000000000E /* WatchBridge.swift */,
 				8AC14CCB2A5DF09762167DE5 /* AjustesView.swift */,
 				6592930CEC42D5877B074A74 /* Sounds */,
@@ -324,7 +327,7 @@
 				C3AB277A738AB41300223CB2 /* LoginView.swift in Sources */,
 				1265B857421ACA89FCB351FE /* DevCredentials.swift in Sources */,
 				75CF5EC9305D05489D38DEF5 /* RootTabView.swift in Sources */,
-				D0B5F297BFDDE1DB281E36C2 /* MiCuentaView.swift in Sources */,
+				D0B5F297BFDDE1DB281E36C2 /* ProfileAvatar.swift in Sources */,
 				DE7BAEE41A72F193046C3164 /* CreatePomodoroView.swift in Sources */,
 				F6D787E8D38571DD6DB4D346 /* AhoraMismoView.swift in Sources */,
 				0E6EE84E82B90982348E3A33 /* AlarmasView.swift in Sources */,
@@ -337,6 +340,7 @@
 				7C1FE646B879E22FD4644E8D /* HistorialView.swift in Sources */,
 				EAAE53E3CDDC0E0D84916C8B /* NotificationManager.swift in Sources */,
 				A1B2C3D4E5F60718293A4B5C /* OmkromAuth.swift in Sources */,
+				7A7C000000000000000000F6 /* PomodorosView.swift in Sources */,
 				7A7C0000000000000000000F /* WatchBridge.swift in Sources */,
 				DCC88F443CAD4608DC334020 /* AjustesView.swift in Sources */,
 			);

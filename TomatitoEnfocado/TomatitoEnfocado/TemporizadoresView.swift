@@ -47,7 +47,7 @@ struct TemporizadoresView: View {
                                     Button {
                                         Task {
                                             await activeTemporizadores.start(temporizador: temporizador)
-                                            selectedTab = 1
+                                            selectedTab = 0
                                         }
                                     } label: {
                                         HStack(spacing: 12) {
@@ -89,7 +89,7 @@ struct TemporizadoresView: View {
                                     Button {
                                         Task {
                                             await activeTemporizadores.start(temporizador: temporizador)
-                                            selectedTab = 1
+                                            selectedTab = 0
                                         }
                                     } label: {
                                         Image(systemName: "play.circle.fill")

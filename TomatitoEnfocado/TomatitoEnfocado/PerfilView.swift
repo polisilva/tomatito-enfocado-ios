@@ -4,7 +4,7 @@
 //
 //  Tela "Mi perfil": foto, datos de cuenta, plan Omkrom y gestión de
 //  Application Passwords. El "cambiar contraseña" del móvil se resuelve
-//  gestionando Application Passwords (crear una nueva / revocar viejas) en
+//  gestionando Application Passwords (crear una nueva / revocar viejas) enrzxx
 //  vez de tocar la contraseña principal de la cuenta — el app nunca la usa
 //  para nada, así que exponerla aquí sería una superficie de riesgo inútil.
 //

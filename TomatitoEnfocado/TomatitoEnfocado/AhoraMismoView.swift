@@ -2,9 +2,10 @@
 //  AhoraMismoView.swift
 //  TomatitoEnfocado
 //
-//  Tela "Ahora mismo": control en vivo — la pantalla más importante.
-//  Muestra el pomodoro activo, los temporizadores activos y las próximas
-//  alarmas, y se resincroniza con el servidor cada 15s.
+//  Pestaña "Inicio" (antes "Inicio" + "Ahora mismo" por separado): control en
+//  vivo — la pantalla más importante. Muestra el pomodoro activo, los
+//  temporizadores activos, las próximas alarmas y el historial de hoy, con la
+//  foto de perfil arriba, y se resincroniza con el servidor cada 15s.
 //
 
 import SwiftUI
@@ -42,6 +43,8 @@ struct AhoraMismoView: View {
     @State private var pomodoros: [Pomodoro] = []
     @State private var lastPomodoroId: Int?
     @State private var showingCreate = false
+    @State private var cuenta: CuentaInfo?
+    @State private var showingPerfil = false
     @ObservedObject private var ajustes = AjustesStore.shared
 
     var body: some View {
@@ -219,7 +222,13 @@ struct AhoraMismoView: View {
                 .padding(.bottom, 48)
             }
             .background(Color(.systemGroupedBackground))
-            .navigationTitle("Ahora mismo")
+            .safeAreaInset(edge: .top, spacing: 0) { header }
+            .toolbar(.hidden, for: .navigationBar)
+            .sheet(isPresented: $showingPerfil, onDismiss: { Task { await loadCuenta() } }) {
+                PerfilView()
+                    .environmentObject(session)
+            }
+            .task { await loadCuenta() }
             .task { await loadUpcomingAlarmas() }
             .task { await loadHistorial() }
             .task { await loadPomodoros() }
@@ -252,6 +261,36 @@ struct AhoraMismoView: View {
                 await activeTemporizadores.resyncFromServer()
             }
         }
+    }
+
+    /// Título del app + foto de perfil, agrupados y centrados arriba.
+    private var header: some View {
+        HStack(spacing: 12) {
+            HStack(spacing: 6) {
+                Text("🍅")
+                Text("Tomatito").foregroundStyle(.red)
+                Text("Enfocado").foregroundStyle(.primary)
+            }
+            .font(.system(size: 24, weight: .bold))
+            .lineLimit(1)
+            .minimumScaleFactor(0.6)
+
+            Button {
+                showingPerfil = true
+            } label: {
+                ProfileAvatar(url: cuenta?.avatarURL, email: cuenta?.email ?? session.username, size: 44)
+            }
+            .accessibilityLabel("Mi perfil")
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
+        .padding(.bottom, 12)
+        .background(Color(.systemBackground).ignoresSafeArea(edges: .top))
+    }
+
+    private func loadCuenta() async {
+        cuenta = try? await session.client.request("mi-cuenta")
     }
 
     /// El pomodoro usado más recientemente, para "Reiniciar «último»" (como en la web).

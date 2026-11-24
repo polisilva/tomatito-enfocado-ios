@@ -2,7 +2,7 @@
 //  RootTabView.swift
 //  TomatitoEnfocado
 //
-//  Navegación raíz por abas: Inicio / Ahora mismo / Alarmas / Temporizadores / Ajustes
+//  Navegación raíz por abas: Inicio / Pomodoros / Alarmas / Temporizadores / Ajustes
 //  (especificación "13. Móvil").
 //
 
@@ -55,7 +55,8 @@ struct RootTabView: View {
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            MiCuentaView(selectedTab: $selectedTab)
+            AhoraMismoView()
+                .readableColumn()
                 .tabItem {
                     Label {
                         Text("Inicio")
@@ -65,9 +66,9 @@ struct RootTabView: View {
                 }
                 .tag(0)
 
-            AhoraMismoView()
+            PomodorosView()
                 .readableColumn()
-                .tabItem { Label("Ahora mismo", systemImage: "timer") }
+                .tabItem { Label("Pomodoros", systemImage: "timer") }
                 .tag(1)
 
             AlarmasView()
