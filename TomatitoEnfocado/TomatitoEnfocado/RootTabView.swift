@@ -52,6 +52,8 @@ struct RootTabView: View {
         #endif
         return 0
     }()
+    @State private var showingTimer = false
+    @EnvironmentObject private var activeTimer: ActiveTimerStore
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -67,16 +69,19 @@ struct RootTabView: View {
                 .tag(0)
 
             PomodorosView()
+                .miniPomodoroBar { showingTimer = true }
                 .readableColumn()
                 .tabItem { Label("Pomodoros", systemImage: "timer") }
                 .tag(1)
 
             AlarmasView()
+                .miniPomodoroBar { showingTimer = true }
                 .readableColumn()
                 .tabItem { Label("Alarmas", systemImage: "alarm") }
                 .tag(2)
 
             TemporizadoresView(selectedTab: $selectedTab)
+                .miniPomodoroBar { showingTimer = true }
                 .readableColumn()
                 .tabItem { Label("Temporizadores", systemImage: "hourglass") }
                 .tag(3)
@@ -84,9 +89,26 @@ struct RootTabView: View {
             NavigationStack {
                 AjustesView()
             }
+            .miniPomodoroBar { showingTimer = true }
             .readableColumn()
             .tabItem { Label("Ajustes", systemImage: "gearshape") }
             .tag(4)
+        }
+        .sheet(isPresented: $showingTimer) {
+            PomodoroDetailSheet()
+        }
+        .task { await resyncLoop() }
+    }
+
+    /// La barra roja depende de saber si hay un pomodoro activo en cualquier
+    /// pestaña. Inicio y Pomodoros ya se contrastan solas cada 15 s; aquí se
+    /// cubren al abrir la app y las demás pestañas (Alarmas, Temporizadores, Ajustes).
+    private func resyncLoop() async {
+        while !Task.isCancelled {
+            if selectedTab >= 2 || activeTimer.items.isEmpty {
+                await activeTimer.resyncFromServer()
+            }
+            try? await Task.sleep(nanoseconds: 15_000_000_000)
         }
     }
 }

@@ -19,6 +19,7 @@
 		1265B857421ACA89FCB351FE /* DevCredentials.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEA1A1B97D65B1CC6CA20776 /* DevCredentials.swift */; };
 		75CF5EC9305D05489D38DEF5 /* RootTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E42D473D0DDBF0D362B59BC4 /* RootTabView.swift */; };
 		D0B5F297BFDDE1DB281E36C2 /* ProfileAvatar.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD8398FD881B96397C9B62F0 /* ProfileAvatar.swift */; };
+		7E3A91C45D2B8F06A1C4E9D8 /* MiniPomodoroBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E3A91C45D2B8F06A1C4E9D7 /* MiniPomodoroBar.swift */; };
 		DE7BAEE41A72F193046C3164 /* CreatePomodoroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FFCD9FF353F667571527332 /* CreatePomodoroView.swift */; };
 		F6D787E8D38571DD6DB4D346 /* AhoraMismoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8629318B51E184A18B8E01DF /* AhoraMismoView.swift */; };
 		0E6EE84E82B90982348E3A33 /* AlarmasView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43127C7855965F0FF318D2D7 /* AlarmasView.swift */; };
@@ -63,6 +64,7 @@
 		DEA1A1B97D65B1CC6CA20776 /* DevCredentials.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevCredentials.swift; sourceTree = "<group>"; };
 		E42D473D0DDBF0D362B59BC4 /* RootTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootTabView.swift; sourceTree = "<group>"; };
 		DD8398FD881B96397C9B62F0 /* ProfileAvatar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileAvatar.swift; sourceTree = "<group>"; };
+		7E3A91C45D2B8F06A1C4E9D7 /* MiniPomodoroBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniPomodoroBar.swift; sourceTree = "<group>"; };
 		5FFCD9FF353F667571527332 /* CreatePomodoroView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatePomodoroView.swift; sourceTree = "<group>"; };
 		8629318B51E184A18B8E01DF /* AhoraMismoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AhoraMismoView.swift; sourceTree = "<group>"; };
 		43127C7855965F0FF318D2D7 /* AlarmasView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmasView.swift; sourceTree = "<group>"; };
@@ -140,6 +142,7 @@
 				DEA1A1B97D65B1CC6CA20776 /* DevCredentials.swift */,
 				E42D473D0DDBF0D362B59BC4 /* RootTabView.swift */,
 				DD8398FD881B96397C9B62F0 /* ProfileAvatar.swift */,
+				7E3A91C45D2B8F06A1C4E9D7 /* MiniPomodoroBar.swift */,
 				5FFCD9FF353F667571527332 /* CreatePomodoroView.swift */,
 				8629318B51E184A18B8E01DF /* AhoraMismoView.swift */,
 				43127C7855965F0FF318D2D7 /* AlarmasView.swift */,
@@ -328,6 +331,7 @@
 				1265B857421ACA89FCB351FE /* DevCredentials.swift in Sources */,
 				75CF5EC9305D05489D38DEF5 /* RootTabView.swift in Sources */,
 				D0B5F297BFDDE1DB281E36C2 /* ProfileAvatar.swift in Sources */,
+				7E3A91C45D2B8F06A1C4E9D8 /* MiniPomodoroBar.swift in Sources */,
 				DE7BAEE41A72F193046C3164 /* CreatePomodoroView.swift in Sources */,
 				F6D787E8D38571DD6DB4D346 /* AhoraMismoView.swift in Sources */,
 				0E6EE84E82B90982348E3A33 /* AlarmasView.swift in Sources */,
